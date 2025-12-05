@@ -12,14 +12,37 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastSaveTime = localStorage.getItem('lastSaveTime') ? parseInt(localStorage.getItem('lastSaveTime')) : Date.now();
 
     // --- دیتابیس آیتم‌های بازار ---
+        // --- دیتابیس آیتم‌های بازار (توسعه یافته) ---
     const marketItems = [
-        { id: 'intern', name: 'کارآموز ساده', profit: 100, basePrice: 500, icon: 'fa-user-graduate', level: 0 },
-        { id: 'wheelbarrow', name: 'فرغون حرفه‌ای', profit: 250, basePrice: 1000, icon: 'fa-shopping-cart', level: 0 },
-        { id: 'drill', name: 'دریل هیلتی', profit: 600, basePrice: 2500, icon: 'fa-hammer', level: 0 },
-        { id: 'theodolite', name: 'دوربین نقشه‌برداری', profit: 1500, basePrice: 8000, icon: 'fa-camera', level: 0 },
-        { id: 'mixer', name: 'تراک میکسر', profit: 4000, basePrice: 20000, icon: 'fa-truck-monster', level: 0 },
-        { id: 'crane', name: 'تاور کرین', profit: 10000, basePrice: 50000, icon: 'fa-building', level: 0 }
+        // بخش 1: نیروی انسانی و ابزار دستی
+        { id: 'm1', name: 'دانشجوی ترم یک', profit: 50, basePrice: 500, icon: 'fa-user-graduate', level: 0 },
+        { id: 'm2', name: 'کارگر ساده', profit: 120, basePrice: 1000, icon: 'fa-user', level: 0 },
+        { id: 'm3', name: 'فرغون', profit: 300, basePrice: 2500, icon: 'fa-shopping-cart', level: 0 },
+        { id: 'm4', name: 'متر لیزری', profit: 500, basePrice: 5000, icon: 'fa-ruler', level: 0 },
+        { id: 'm5', name: 'تراز لیزری', profit: 800, basePrice: 9000, icon: 'fa-crosshairs', level: 0 },
+        
+        // بخش 2: ماشین‌آلات
+        { id: 'm6', name: 'دریل هیلتی', profit: 1200, basePrice: 15000, icon: 'fa-hammer', level: 0 },
+        { id: 'm7', name: 'موتور جوش', profit: 2000, basePrice: 25000, icon: 'fa-bolt', level: 0 },
+        { id: 'm8', name: 'دوربین توتال', profit: 3500, basePrice: 40000, icon: 'fa-camera', level: 0 },
+        { id: 'm9', name: 'بابکت', profit: 5000, basePrice: 70000, icon: 'fa-snowplow', level: 0 },
+        { id: 'm10', name: 'کامیون کمپرسی', profit: 7500, basePrice: 120000, icon: 'fa-truck', level: 0 },
+
+        // بخش 3: ماشین‌آلات سنگین
+        { id: 'm11', name: 'تراک میکسر', profit: 10000, basePrice: 200000, icon: 'fa-truck-monster', level: 0 },
+        { id: 'm12', name: 'پمپ دکل', profit: 14000, basePrice: 350000, icon: 'fa-industry', level: 0 },
+        { id: 'm13', name: 'تاور کرین', profit: 20000, basePrice: 600000, icon: 'fa-building', level: 0 },
+        { id: 'm14', name: 'لودر کاترپیلار', profit: 30000, basePrice: 1000000, icon: 'fa-tractor', level: 0 },
+
+        // بخش 4: شرکت داری
+        { id: 'm15', name: 'دفتر فنی', profit: 50000, basePrice: 2500000, icon: 'fa-laptop-house', level: 0 },
+        { id: 'm16', name: 'آزمایشگاه بتن', profit: 80000, basePrice: 5000000, icon: 'fa-flask', level: 0 },
+        { id: 'm17', name: 'کارخانه شن و ماسه', profit: 150000, basePrice: 10000000, icon: 'fa-mountain', level: 0 },
+        { id: 'm18', name: 'پتروشیمی', profit: 300000, basePrice: 50000000, icon: 'fa-oil-can', level: 0 },
+        { id: 'm19', name: 'برج‌سازی دبی', profit: 600000, basePrice: 200000000, icon: 'fa-city', level: 0 },
+        { id: 'm20', name: 'وزارت راه', profit: 1000000, basePrice: 1000000000, icon: 'fa-globe', level: 0 }
     ];
+
 
     // --- المان‌های DOM ---
     const balanceEl = document.getElementById('balance');
@@ -59,11 +82,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- توابع UI و ذخیره‌سازی ---
-    function updateUI() {
+        function updateUI() {
         balanceEl.innerText = balance.toLocaleString();
         energyEl.innerText = `${Math.floor(energy)} / ${maxEnergy}`;
         energyFill.style.width = `${(energy / maxEnergy) * 100}%`;
         pphEl.innerText = pph.toLocaleString();
+        
+        updateRank(); // <--- این خط جدید است
     }
 
     function saveData() {
@@ -273,3 +298,36 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 2000);
     };
 });
+    // تعریف لول‌های کاربری (Rank)
+    const userRanks = [
+        { name: 'ترم یکی', min: 0 },
+        { name: 'نقشه‌بردار', min: 5000 },
+        { name: 'سرپرست کارگاه', min: 25000 },
+        { name: 'مهندس ناظر', min: 100000 },
+        { name: 'پیمانکار جزء', min: 500000 },
+        { name: 'پیمانکار کل', min: 2000000 },
+        { name: 'انبوه ساز', min: 10000000 },
+        { name: 'سلطان بتن', min: 50000000 },
+        { name: 'وزیر مسکن', min: 200000000 }
+    ];
+
+    // تابع آپدیت لول (این را در updateUI صدا می‌زنیم)
+    function updateRank() {
+        let currentRankName = userRanks[0].name;
+        let currentRankIdx = 1; // برای نمایش Lv.1
+
+        for (let i = 0; i < userRanks.length; i++) {
+            if (balance >= userRanks[i].min) {
+                currentRankName = userRanks[i].name;
+                currentRankIdx = i + 1;
+            } else {
+                break; 
+            }
+        }
+        
+        document.getElementById('username').innerText = currentRankName;
+        document.getElementById('level-value').innerText = currentRankIdx;
+        
+        // آپدیت پروگرس بار (اختیاری اما جذاب)
+        // می‌توانیم رنگ دور دکمه سکه را بر اساس لول عوض کنیم
+    }
