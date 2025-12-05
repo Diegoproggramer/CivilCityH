@@ -39,14 +39,13 @@
             </div>
         </header>
 
-        <!-- Main Game Area -->
+        <!-- 1. Main Game Area -->
         <main id="main-view" class="view active">
             <div class="coin-wrapper">
                 <div class="coin-container" id="coin-btn">
                     <img src="https://cdn-icons-png.flaticon.com/512/122/122047.png" alt="Tap Coin" class="main-coin-img">
                 </div>
             </div>
-            
             <div class="energy-container">
                 <div class="energy-info">
                     <span id="energy">1000</span> / <span id="max-energy">1000</span>
@@ -58,7 +57,50 @@
             </div>
         </main>
 
-        <!-- Features Views (Placeholder for SPA logic) -->
+        <!-- 2. Services / Tools View (New) -->
+        <div id="tools-view" class="view" style="display: none;">
+            <h2>جعبه ابزار مهندسی</h2>
+            <div class="tools-grid">
+                <!-- ابزار ۱: محاسبه بتن -->
+                <div class="tool-card" onclick="openTool('concrete')">
+                    <div class="tool-icon">🏗️</div>
+                    <span>محاسبه حجم بتن</span>
+                </div>
+                <!-- ابزار ۲: وزن میلگرد -->
+                <div class="tool-card" onclick="openTool('steel')">
+                    <div class="tool-icon">⚖️</div>
+                    <span>وزن میلگرد</span>
+                </div>
+                <!-- ابزار ۳: قیمت روز -->
+                <div class="tool-card" onclick="openTool('market')">
+                    <div class="tool-icon">💰</div>
+                    <span>قیمت مصالح</span>
+                </div>
+                <!-- ابزار ۴: مقررات ملی -->
+                <div class="tool-card" onclick="openTool('rules')">
+                    <div class="tool-icon">📚</div>
+                    <span>مقررات ملی</span>
+                </div>
+                 <!-- جایگاه ۹۶ ابزار دیگر -->
+                 <div class="tool-card locked">
+                    <div class="tool-icon">🔒</div>
+                    <span>به زودی...</span>
+                </div>
+            </div>
+            
+            <!-- Tool Modal (محل نمایش محاسبات) -->
+            <div id="tool-modal" class="modal">
+                <div class="modal-content">
+                    <span class="close-modal" onclick="closeModal()">&times;</span>
+                    <h3 id="modal-title">عنوان ابزار</h3>
+                    <div id="modal-body">
+                        <!-- محتوا اینجا با جاوااسکریپت پر میشود -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Boost View -->
         <div id="boost-view" class="view" style="display: none;">
             <h2>تقویت کننده‌ها</h2>
             <div class="card">
@@ -66,13 +108,9 @@
                 <p>با هر کلیک سکه بیشتری بگیرید</p>
                 <button onclick="buyBoost('multitap')">خرید - 500 سکه</button>
             </div>
-            <div class="card">
-                <h3>مخزن انرژی</h3>
-                <p>افزایش ظرفیت انرژی</p>
-                <button onclick="buyBoost('energy')">خرید - 1000 سکه</button>
-            </div>
         </div>
 
+        <!-- 4. Friends View -->
         <div id="friends-view" class="view" style="display: none;">
             <h2>دوستان</h2>
             <div class="card">
@@ -87,6 +125,10 @@
                 <img src="https://cdn-icons-png.flaticon.com/512/122/122047.png" alt="Exchange">
                 <span>استخراج</span>
             </button>
+            <button class="nav-item" onclick="switchTab('tools')">
+                <img src="https://cdn-icons-png.flaticon.com/512/1042/1042390.png" alt="Tools">
+                <span>ابزارها</span>
+            </button>
             <button class="nav-item" onclick="switchTab('boost')">
                 <img src="https://cdn-icons-png.flaticon.com/512/889/889590.png" alt="Mine">
                 <span>بوست</span>
@@ -97,7 +139,6 @@
             </button>
         </nav>
 
-        <!-- Toast Notification -->
         <div id="toast" class="toast">پیام سیستم</div>
     </div>
 
