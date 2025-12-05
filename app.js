@@ -13,7 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
             lastClaimedDay: -1,
             streak: 0
         },
-        marketItems: {} // level of each item
+        marketItems: {}, // level of each item
+        completedTasks: [] // Array of task IDs
     };
 
     const CIVIL_TOKEN_SUPPLY = 100000000000;
@@ -39,8 +40,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const claimDailyRewardBtn = document.getElementById('claim-daily-reward-btn');
     const calendarGrid = document.querySelector('.calendar-grid');
 
-    // Market
+    // Market & Tasks
     const marketItemsContainer = document.getElementById('market-items');
+    const tasksContainer = document.getElementById('tasks-list');
 
     // Airdrop
     const countdownEl = document.getElementById('airdrop-countdown');
@@ -70,11 +72,11 @@ document.addEventListener('DOMContentLoaded', () => {
         { id: 'supervisor', name: 'تیم کارگری', basePrice: 1500000, pph: 5000, icon: 'fa-users' },
         { id: 'architect', name: 'مهندس ناظر', basePrice: 5000000, pph: 15000, icon: 'fa-user-tie' },
         { id: 'license', name: 'پروانه ساخت', basePrice: 12000000, pph: 35000, icon: 'fa-file-signature' },
-        { id: 'crane', name: 'جرثقیل', basePrice: 30000000, pph: 80000, icon: 'fa-crane' }, // Using a creative icon
+        { id: 'crane', name: 'جرثقیل', basePrice: 30000000, pph: 80000, icon: 'fa-crane' },
         { id: 'excavator', name: 'بیل مکانیکی', basePrice: 75000000, pph: 180000, icon: 'fa-tractor' },
         { id: 'land', name: 'خرید زمین', basePrice: 200000000, pph: 400000, icon: 'fa-map-marked-alt' },
         { id: 'scaffolding', name: 'داربست', basePrice: 500000000, pph: 900000, icon: 'fa-border-all' },
-        { id: 'concrete_pump', name: 'پمپ بتن', basePrice: 1200000000, pph: 2000000, icon: 'fa-pump-soap' }, // Creative icon
+        { id: 'concrete_pump', name: 'پمپ بتن', basePrice: 1200000000, pph: 2000000, icon: 'fa-pump-soap' },
         { id: 'asphalt_paver', name: 'دستگاه آسفالت', basePrice: 3000000000, pph: 4500000, icon: 'fa-road' },
         { id: 'office', name: 'دفتر فنی', basePrice: 7000000000, pph: 10000000, icon: 'fa-building' },
         { id: 'consulting_firm', name: 'شرکت مشاور', basePrice: 15000000000, pph: 20000000, icon: 'fa-sitemap' },
@@ -82,6 +84,15 @@ document.addEventListener('DOMContentLoaded', () => {
         { id: 'megaproject', name: 'مگا پروژه', basePrice: 100000000000, pph: 100000000, icon: 'fa-landmark' }
     ];
     
+    const TASKS = [
+        { id: 'join_tg', title: 'عضویت در کانال تلگرام', reward: 5000, icon: 'fa-telegram', url: 'https://telegram.org' },
+        { id: 'follow_x', title: 'فالو کردن در توییتر (X)', reward: 5000, icon: 'fa-twitter', url: 'https://twitter.com' },
+        { id: 'sub_yt', title: 'سابسکرایب یوتیوب', reward: 10000, icon: 'fa-youtube', url: 'https://youtube.com' },
+        { id: 'follow_insta', title: 'فالو کردن اینستاگرام', reward: 5000, icon: 'fa-instagram', url: 'https://instagram.com' },
+        { id: 'invite_3', title: 'دعوت از ۳ دوست', reward: 25000, icon: 'fa-user-plus', url: '#' },
+        { id: 'visit_site', title: 'بازدید از سایت عمران', reward: 2000, icon: 'fa-globe', url: 'https://google.com' }
+    ];
+
     const DAILY_REWARDS = [500, 1000, 2000, 4000, 8000, 16000, 32000];
 
     // --- Initialization ---
@@ -105,14 +116,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     // Start game loops after splash screen
                     setInterval(energyRecovery, 1000);
-                    setInterval(passiveIncome, 1000); // Check every second for more responsive PPH
-                    setInterval(saveGameState, 5000); // Save every 5 seconds
+                    setInterval(passiveIncome, 1000);
+                    setInterval(saveGameState, 5000);
                     
                     // Initial UI setup
                     renderMarket();
+                    renderTasks();
                     renderDailyRewardCalendar();
                     updateUI();
-                    updateAirdropCountdown(); // Start the countdown
+                    updateAirdropCountdown();
                 }, 500);
             }
         }, 500);
@@ -136,7 +148,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function passiveIncome() {
-        // PPH is "per hour", so we calculate income per second
         const incomePerSecond = gameState.pph / 3600;
         gameState.balance += incomePerSecond;
         updateUI();
@@ -171,9 +182,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const mainView = document.getElementById('main-view');
         mainView.appendChild(floatingText);
         
-        // Randomize position
-        const x = Math.random() * 80 + 10; // 10% to 90%
-        const y = Math.random() * 20 + 40; // 40% to 60%
+        const x = Math.random() * 80 + 10; 
+        const y = Math.random() * 20 + 40; 
         floatingText.style.left = `${x}%`;
         floatingText.style.top = `${y}%`;
         
@@ -193,6 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (viewId === 'market-view') updateMarketItems();
         if (viewId === 'airdrop-view') updateAirdropView();
+        if (viewId === 'earn-view') renderTasks();
     }
     
     // --- Market Logic ---
@@ -200,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
         marketItemsContainer.innerHTML = '';
         MARKET_STRUCTURE.forEach(item => {
             if (!gameState.marketItems[item.id]) {
-                gameState.marketItems[item.id] = 0; // Initialize level
+                gameState.marketItems[item.id] = 0;
             }
             
             const itemEl = document.createElement('div');
@@ -253,6 +264,76 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- Earn (Tasks) Logic ---
+    function renderTasks() {
+        tasksContainer.innerHTML = '';
+        TASKS.forEach(task => {
+            const isCompleted = gameState.completedTasks.includes(task.id);
+            const taskEl = document.createElement('div');
+            taskEl.className = 'task-item';
+            
+            let btnState = 'start';
+            let btnText = 'انجام';
+            if (isCompleted) {
+                btnState = 'done';
+                btnText = 'تکمیل';
+            }
+
+            taskEl.innerHTML = `
+                <div class="task-item-icon"><i class="fab ${task.icon}"></i></div>
+                <div class="task-info">
+                    <span class="task-title">${task.title}</span>
+                    <span class="task-reward">+${formatNumber(task.reward)} <i class="fas fa-coins"></i></span>
+                </div>
+                <button class="task-btn ${btnState}" id="btn-${task.id}" ${isCompleted ? 'disabled' : ''}>
+                    ${btnText}
+                </button>
+            `;
+            
+            // Only add listener if not completed
+            if (!isCompleted) {
+                const btn = taskEl.querySelector('.task-btn');
+                btn.addEventListener('click', () => handleTaskAction(task, btn));
+            }
+            
+            tasksContainer.appendChild(taskEl);
+        });
+    }
+
+    function handleTaskAction(task, btn) {
+        if (btn.classList.contains('start')) {
+            // Step 1: Open Link
+            if(task.url !== '#') window.open(task.url, '_blank');
+            
+            // Simulate waiting time
+            btn.textContent = 'بررسی...';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                btn.classList.remove('start');
+                btn.classList.add('claim');
+                btn.textContent = 'دریافت';
+                btn.disabled = false;
+            }, 3000); // 3 seconds delay
+            
+        } else if (btn.classList.contains('claim')) {
+            // Step 2: Claim Reward
+            gameState.balance += task.reward;
+            gameState.completedTasks.push(task.id);
+            
+            btn.classList.remove('claim');
+            btn.classList.add('done');
+            btn.textContent = 'تکمیل';
+            btn.disabled = true;
+            
+            updateUI();
+            
+            // Show toast or effect
+            const originalText = btn.textContent;
+            createFloatingText(`+${task.reward}`);
+        }
+    }
+
     // --- Daily Reward Logic ---
     function renderDailyRewardCalendar() {
         calendarGrid.innerHTML = '';
@@ -270,7 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateDailyRewardStatus() {
-        const today = new Date().getDay(); // 0 for Sunday, 6 for Saturday
+        const today = new Date().getDay(); 
         const streak = gameState.dailyReward.streak;
 
         for (let i = 0; i < 7; i++) {
@@ -335,13 +416,13 @@ document.addEventListener('DOMContentLoaded', () => {
     window.calculateRebar = () => {
         const d = parseFloat(document.getElementById('rebar-diameter').value) || 0;
         const l = parseFloat(document.getElementById('rebar-length').value) || 0;
-        const weight = (d * d * l * 0.00617).toFixed(2); // Standard formula
+        const weight = (d * d * l * 0.00617).toFixed(2); 
         document.getElementById('rebar-result').textContent = weight;
     }
 
     window.calculateBricks = () => {
         const area = parseFloat(document.getElementById('wall-area').value) || 0;
-        document.getElementById('bricks-result').textContent = Math.ceil(area * 70); // Approximation
+        document.getElementById('bricks-result').textContent = Math.ceil(area * 70); 
     }
     
     window.calculateSlope = () => {
@@ -354,25 +435,23 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('slope-result').textContent = ((rise / run) * 100).toFixed(1);
     }
     
-    // NEW: Asphalt Calculator
     window.calculateAsphalt = () => {
         const length = parseFloat(document.getElementById('asphalt-length').value) || 0;
         const width = parseFloat(document.getElementById('asphalt-width').value) || 0;
         const thicknessCm = parseFloat(document.getElementById('asphalt-thickness').value) || 0;
-        const density = 2.4; // Average density of asphalt in ton/m^3
+        const density = 2.4; 
         const volumeM3 = length * width * (thicknessCm / 100);
         const weightTon = volumeM3 * density;
         document.getElementById('asphalt-result').textContent = weightTon.toFixed(2);
     }
 
-    // NEW: Pipe Flow Rate Calculator
     window.calculateFlowRate = () => {
         const diameterCm = parseFloat(document.getElementById('pipe-diameter').value) || 0;
         const velocity = parseFloat(document.getElementById('pipe-velocity').value) || 0;
         const radiusM = (diameterCm / 2) / 100;
         const areaM2 = Math.PI * Math.pow(radiusM, 2);
         const flowRateM3s = areaM2 * velocity;
-        const flowRateLps = flowRateM3s * 1000; // Convert to Liters per second
+        const flowRateLps = flowRateM3s * 1000; 
         document.getElementById('flowrate-result').textContent = flowRateLps.toFixed(2);
     }
 
@@ -398,7 +477,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function updateAirdropView() {
-        // Simple formula: 1 in-game coin = 0.05 CVC token (example)
         const estimatedAirdrop = gameState.balance * 0.05;
         estimatedAirdropEl.textContent = formatNumber(Math.floor(estimatedAirdrop));
     }
@@ -416,14 +494,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const savedState = localStorage.getItem('civilCityGameState');
         if (savedState) {
             const loadedState = JSON.parse(savedState);
-            // We carefully merge to avoid issues with new/deleted properties in updates
             Object.assign(gameState, loadedState);
+            
+            // Ensure completedTasks exists (for users upgrading from older version)
+            if(!gameState.completedTasks) gameState.completedTasks = [];
         }
-        // Always reset last online time on load
         gameState.lastOnline = new Date().getTime();
     }
     
-    // --- Utility Functions ---
     function formatNumber(num) {
         if (num < 1000) return num;
         if (num < 1000000) return (num / 1000).toFixed(1) + 'K';
@@ -432,6 +510,5 @@ document.addEventListener('DOMContentLoaded', () => {
         return (num / 1000000000000).toFixed(4) + 'T';
     }
 
-    // Start the game
     init();
 });
