@@ -2,208 +2,281 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Civil City</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Civil City - ساخت و ساز آینده</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    <div id="app-container">
-        <!-- Splash Screen -->
-        <div id="splash-screen" class="view active">
-            <div class="splash-content">
-                <img src="https://i.ibb.co/6g4SkC6/civil-city-logo.png" alt="Civil City Logo" class="splash-logo">
-                <div class="progress-bar">
-                    <div class="progress"></div>
+
+    <div class="game-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="profile-info">
+                <div class="avatar"><i class="fas fa-hard-hat"></i></div>
+                <div class="user-details">
+                    <span id="user-rank">مهندس تازه کار</span>
+                    <span id="profit-per-hour" class="pph">0 سکه/ساعت</span>
                 </div>
-                <p>بارگذاری پروژه شهرسازی...</p>
             </div>
+            <div class="settings-btn" onclick="showSection('settings')"><i class="fas fa-cog"></i></div>
         </div>
 
-        <!-- Main Game Content -->
-        <div id="game-content" class="hidden">
-            <div class="header">
-                <div class="rank-info">
-                    <span id="rank-name">ترم یکی (Lv. 1)</span>
-                </div>
-                <div class="pph-info">
-                    <span>PPH:</span>
-                    <span id="pph-value">0</span>
-                    <i class="fas fa-coins"></i>
-                </div>
-            </div>
+        <!-- Balance Display -->
+        <div class="balance-container">
+            <i class="fas fa-coins coin-icon"></i>
+            <h1 id="balance">0</h1>
+        </div>
 
-            <!-- Main Clicker View -->
-            <div id="main-view" class="view">
-                <div class="balance-container">
-                    <i class="fas fa-coins coin-icon"></i>
-                    <span id="balance">0</span>
-                </div>
-
-                <div class="action-buttons">
-                    <button id="daily-reward-btn" class="action-btn">
-                        <i class="fas fa-calendar-day"></i> هدیه روزانه
-                    </button>
-                    <button id="invite-btn" class="action-btn">
-                        <i class="fas fa-user-friends"></i> دعوت از دوستان
-                    </button>
-                </div>
-
-                <div class="clicker-container">
-                    <div id="clicker-btn">
-                        <img src="https://i.ibb.co/2Z5d13v/hard-hat-icon-2.png" alt="Clicker Icon">
-                        <span class="clicker-token-text">CVC</span>
+        <!-- Main Game Area (Clicker) -->
+        <div id="content-main" class="content-section active">
+            <div class="game-area">
+                <div class="main-character" id="click-btn">
+                    <div class="click-circle">
+                        <div class="inner-circle">
+                            <span class="token-symbol">CVC</span>
+                        </div>
                     </div>
                 </div>
-
+                
                 <div class="energy-bar-container">
-                    <i class="fas fa-bolt"></i>
-                    <span id="energy">1000</span> / <span id="max-energy">1000</span>
+                    <div class="energy-info">
+                        <i class="fas fa-bolt"></i>
+                        <span id="energy-text">500 / 500</span>
+                    </div>
+                    <div class="energy-bar-bg">
+                        <div id="energy-fill" class="energy-fill" style="width: 100%;"></div>
+                    </div>
+                </div>
+
+                <!-- New Future Tech Section -->
+                <div class="future-tech-card">
+                    <div class="tech-header">
+                        <i class="fas fa-rocket"></i>
+                        <span>آینده تکنولوژی</span>
+                    </div>
+                    <p>به زودی: ورود به دنیای <strong>Web3</strong>، <strong>هوش مصنوعی (AI)</strong> و قراردادهای هوشمند.</p>
+                    <div class="tech-icons">
+                        <i class="fab fa-ethereum"></i>
+                        <i class="fas fa-robot"></i>
+                        <i class="fas fa-vr-cardboard"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Market Section -->
+        <div id="content-market" class="content-section">
+            <h2><i class="fas fa-store"></i> بازار مصالح</h2>
+            <p class="section-desc">با خرید آیتم، سود ساعتی (PPH) خود را افزایش دهید.</p>
+            <div id="market-items" class="items-grid">
+                <!-- Items generated by JS -->
+            </div>
+        </div>
+
+        <!-- Earn/Tasks Section -->
+        <div id="content-earn" class="content-section">
+            <div class="earn-header">
+                <i class="fas fa-gift big-icon"></i>
+                <h2>کسب درآمد بیشتر</h2>
+                <p>تسک‌ها را انجام دهید و سکه رایگان بگیرید</p>
+            </div>
+
+            <div class="daily-reward-card" onclick="claimDailyReward()">
+                <div class="reward-info">
+                    <span>جایزه روزانه</span>
+                    <small id="daily-reward-timer">آماده دریافت</small>
+                </div>
+                <div class="reward-amount">
+                    +<span id="daily-reward-amount">1,000</span>
                 </div>
             </div>
 
-            <!-- Market View -->
-            <div id="market-view" class="view hidden">
-                <h2><i class="fas fa-store"></i> بازار (Market)</h2>
-                <div id="market-items" class="market-grid">
-                    <!-- Market items will be generated by JS -->
-                </div>
+            <h3 class="task-title">لیست تسک‌ها</h3>
+            <div id="tasks-list" class="tasks-container">
+                <!-- Tasks generated by JS -->
             </div>
+        </div>
 
-            <!-- Earn View -->
-            <div id="earn-view" class="view hidden">
-                <h2><i class="fas fa-tasks"></i> کسب درآمد (Tasks)</h2>
-                <p class="earn-description">تسک‌های زیر را انجام دهید تا سکه رایگان دریافت کنید و شانس ایردراپ CVC خود را افزایش دهید.</p>
-                <div id="tasks-list" class="tasks-container">
-                    <!-- Tasks will be generated by JS -->
-                </div>
-            </div>
-
-            <!-- Tools View -->
-            <div id="tools-view" class="view hidden">
+        <!-- NEW Tools Section (Redesigned) -->
+        <div id="content-tools" class="content-section">
+            
+            <!-- 1. Tools Menu (Grid) -->
+            <div id="tools-menu-view">
                 <h2><i class="fas fa-tools"></i> ابزار مهندسی</h2>
-                <div class="tools-container">
-                    <div class="tool-card">
-                        <h3>محاسبه حجم بتن (متر مکعب)</h3>
-                        <input type="number" id="concrete-length" placeholder="طول (متر)">
-                        <input type="number" id="concrete-width" placeholder="عرض (متر)">
-                        <input type="number" id="concrete-height" placeholder="ضخامت (متر)">
-                        <button onclick="calculateConcrete()">محاسبه</button>
-                        <p>نتیجه: <span id="concrete-result">0</span> متر مکعب</p>
+                <p class="section-desc">ابزار مورد نظر خود را انتخاب کنید:</p>
+                <div class="tools-grid-menu">
+                    <div class="tool-menu-item" onclick="openTool('concrete')">
+                        <i class="fas fa-cube"></i>
+                        <span>حجم بتن</span>
                     </div>
-                    <div class="tool-card">
-                        <h3>محاسبه وزن میلگرد (کیلوگرم)</h3>
-                        <input type="number" id="rebar-diameter" placeholder="قطر (میلی‌متر)">
-                        <input type="number" id="rebar-length" placeholder="طول (متر)">
-                        <button onclick="calculateRebar()">محاسبه</button>
-                        <p>نتیجه: <span id="rebar-result">0</span> کیلوگرم</p>
+                    <div class="tool-menu-item" onclick="openTool('steel')">
+                        <i class="fas fa-layer-group"></i>
+                        <span>وزن میلگرد</span>
                     </div>
-                    <div class="tool-card">
-                        <h3>محاسبه تعداد آجر</h3>
-                        <input type="number" id="wall-area" placeholder="مساحت دیوار (متر مربع)">
-                        <button onclick="calculateBricks()">محاسبه</button>
-                        <p>نتیجه: <span id="bricks-result">0</span> عدد آجر (تقریبی)</p>
+                    <div class="tool-menu-item" onclick="openTool('unit')">
+                        <i class="fas fa-exchange-alt"></i>
+                        <span>تبدیل واحد</span>
                     </div>
-                     <div class="tool-card">
-                        <h3>محاسبه درصد شیب</h3>
-                        <input type="number" id="slope-rise" placeholder="ارتفاع (متر)">
-                        <input type="number" id="slope-run" placeholder="طول افقی (متر)">
-                        <button onclick="calculateSlope()">محاسبه</button>
-                        <p>نتیجه: <span id="slope-result">0</span> درصد</p>
+                    <div class="tool-menu-item" onclick="openTool('slope')">
+                        <i class="fas fa-chart-line"></i>
+                        <span>شیب‌بندی</span>
                     </div>
-                    <div class="tool-card">
-                        <h3>محاسبه حجم آسفالت (تن)</h3>
-                        <input type="number" id="asphalt-length" placeholder="طول مسیر (متر)">
-                        <input type="number" id="asphalt-width" placeholder="عرض مسیر (متر)">
-                        <input type="number" id="asphalt-thickness" placeholder="ضخامت (سانتی‌متر)">
-                        <button onclick="calculateAsphalt()">محاسبه</button>
-                        <p>نتیجه: <span id="asphalt-result">0</span> تن</p>
+                    <div class="tool-menu-item" onclick="openTool('asphalt')">
+                        <i class="fas fa-road"></i>
+                        <span>حجم آسفالت</span>
                     </div>
-                    <div class="tool-card">
-                        <h3>محاسبه دبی لوله (لیتر بر ثانیه)</h3>
-                        <input type="number" id="pipe-diameter" placeholder="قطر لوله (سانتی‌متر)">
-                        <input type="number" id="pipe-velocity" placeholder="سرعت آب (متر بر ثانیه)">
-                        <button onclick="calculateFlowRate()">محاسبه</button>
-                        <p>نتیجه: <span id="flowrate-result">0</span> لیتر بر ثانیه</p>
+                    <div class="tool-menu-item" onclick="openTool('pipe')">
+                        <i class="fas fa-tint"></i>
+                        <span>دبی لوله</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Airdrop View -->
-            <div id="airdrop-view" class="view hidden">
-                 <h2><i class="fas fa-parachute-box"></i> ایردراپ Civil Coin</h2>
-                 <div class="airdrop-info">
-                     <p>پروژه Civil City در فاز بعدی توکن خود را با نام Civil Coin (CVC) عرضه خواهد کرد. بخشی از این توکن‌ها به بازیکنان فعال ایردراپ خواهد شد.</p>
-                     <p><strong>عرضه کل: 100,000,000,000 CVC</strong></p>
-                 </div>
-                 <div class="airdrop-timer-card">
-                     <h3>شمارش معکوس تا رویداد توزیع</h3>
-                     <div id="airdrop-countdown">00d 00h 00m 00s</div>
-                 </div>
-                 <div class="airdrop-allocation-card">
-                     <h3>تخمین ایردراپ شما</h3>
-                     <p>بر اساس فعالیت شما، مقدار تقریبی توکن CVC که دریافت خواهید کرد:</p>
-                     <div class="allocation-amount">
-                         <span id="estimated-airdrop">0</span> CVC
-                     </div>
-                 </div>
-                 <button class="connect-wallet-btn disabled">
-                     <i class="fas fa-wallet"></i> اتصال کیف پول (به زودی)
-                 </button>
-            </div>
+            <!-- 2. Specific Tool Views (Hidden by default) -->
+            <div id="tool-detail-view" class="tool-detail-view" style="display: none;">
+                <div class="tool-header-nav">
+                    <button class="back-btn" onclick="closeTool()">
+                        <i class="fas fa-arrow-right"></i> بازگشت
+                    </button>
+                    <h3 id="active-tool-title">عنوان ابزار</h3>
+                </div>
 
-            <!-- Footer Navigation -->
-            <div class="footer-nav">
-                <div class="nav-item active" onclick="showView('main-view')">
-                    <i class="fas fa-home"></i>
-                    <span>اصلی</span>
-                </div>
-                <div class="nav-item" onclick="showView('market-view')">
-                    <i class="fas fa-store"></i>
-                    <span>بازار</span>
-                </div>
-                <div class="nav-item" onclick="showView('earn-view')">
-                    <i class="fas fa-tasks"></i>
-                    <span>کسب درآمد</span>
-                </div>
-                <div class="nav-item" onclick="showView('tools-view')">
-                    <i class="fas fa-tools"></i>
-                    <span>ابزار</span>
-                </div>
-                <div class="nav-item" onclick="showView('airdrop-view')">
-                    <i class="fas fa-parachute-box"></i>
-                    <span>ایردراپ</span>
+                <!-- Tool Calculator Containers -->
+                <div id="tool-content-area">
+                    
+                    <!-- Concrete -->
+                    <div id="tool-concrete" class="tool-calculator">
+                        <div class="input-group">
+                            <label>طول (m)</label><input type="number" id="c-len">
+                            <label>عرض (m)</label><input type="number" id="c-wid">
+                            <label>ارتفاع/ضخامت (m)</label><input type="number" id="c-hei">
+                        </div>
+                        <button class="calc-btn" onclick="calcConcrete()">محاسبه</button>
+                        <div class="result-box" id="res-concrete">---</div>
+                    </div>
+
+                    <!-- Steel -->
+                    <div id="tool-steel" class="tool-calculator">
+                        <div class="input-group">
+                            <label>نمره میلگرد (mm)</label><input type="number" id="s-dia">
+                            <label>طول کل (m)</label><input type="number" id="s-len">
+                        </div>
+                        <button class="calc-btn" onclick="calcSteel()">محاسبه</button>
+                        <div class="result-box" id="res-steel">---</div>
+                    </div>
+
+                    <!-- Unit Converter -->
+                    <div id="tool-unit" class="tool-calculator">
+                        <div class="input-group">
+                            <label>متر به فوت / فوت به متر</label>
+                            <input type="number" id="u-val" placeholder="مقدار">
+                            <select id="u-type">
+                                <option value="m2f">متر به فوت</option>
+                                <option value="f2m">فوت به متر</option>
+                            </select>
+                        </div>
+                        <button class="calc-btn" onclick="calcUnit()">تبدیل</button>
+                        <div class="result-box" id="res-unit">---</div>
+                    </div>
+
+                    <!-- Slope -->
+                    <div id="tool-slope" class="tool-calculator">
+                        <div class="input-group">
+                            <label>اختلاف ارتفاع (m)</label><input type="number" id="sl-h">
+                            <label>طول افقی (m)</label><input type="number" id="sl-l">
+                        </div>
+                        <button class="calc-btn" onclick="calcSlope()">محاسبه</button>
+                        <div class="result-box" id="res-slope">---</div>
+                    </div>
+
+                    <!-- Asphalt (New) -->
+                    <div id="tool-asphalt" class="tool-calculator">
+                        <div class="input-group">
+                            <label>طول جاده (m)</label><input type="number" id="a-len">
+                            <label>عرض جاده (m)</label><input type="number" id="a-wid">
+                            <label>ضخامت آسفالت (cm)</label><input type="number" id="a-thick">
+                            <label>چگالی (معمولاً 2.3 تن/مترمکعب)</label><input type="number" id="a-den" value="2.3">
+                        </div>
+                        <button class="calc-btn" onclick="calcAsphalt()">محاسبه وزن (تن)</button>
+                        <div class="result-box" id="res-asphalt">---</div>
+                    </div>
+
+                    <!-- Pipe Flow (New) -->
+                    <div id="tool-pipe" class="tool-calculator">
+                        <div class="input-group">
+                            <label>قطر لوله (mm)</label><input type="number" id="p-dia">
+                            <label>سرعت آب (m/s)</label><input type="number" id="p-vel">
+                        </div>
+                        <button class="calc-btn" onclick="calcPipe()">محاسبه دبی (L/s)</button>
+                        <div class="result-box" id="res-pipe">---</div>
+                    </div>
+
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Modals -->
-    <div id="daily-reward-modal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeModal('daily-reward-modal')">&times;</span>
-            <h2>پاداش روزانه</h2>
-            <div class="calendar-grid">
-                <!-- Calendar days will be generated by JS -->
-            </div>
-            <button id="claim-daily-reward-btn" disabled>دریافت پاداش</button>
-        </div>
-    </div>
+        <!-- Airdrop Section -->
+        <div id="content-airdrop" class="content-section">
+            <div class="airdrop-card">
+                <div class="token-logo">CVC</div>
+                <h2>Civil Coin Airdrop</h2>
+                <p>توکن بومی مهندسی عمران</p>
+                
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <small>عرضه کل</small>
+                        <strong>100B</strong>
+                    </div>
+                    <div class="stat-item">
+                        <small>شبکه</small>
+                        <strong>TBD</strong>
+                    </div>
+                </div>
 
-    <div id="invite-modal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeModal('invite-modal')">&times;</span>
-            <h2>دعوت از دوستان</h2>
-            <p>لینک دعوت شما:</p>
-            <div class="invite-link-container">
-                <input type="text" id="invite-link" value="https://your-game-link.com/invite?ref=12345" readonly>
-                <button onclick="copyInviteLink()">کپی</button>
+                <div class="countdown">
+                    <h3>زمان تا لیست شدن:</h3>
+                    <div class="timer-box">
+                        <span id="timer">00:00:00:00</span>
+                    </div>
+                </div>
+
+                <div class="qualification">
+                    <h3>فرمول تخمینی پاداش:</h3>
+                    <div class="formula">
+                        (سکه / 1M) + (PPH * 2)
+                    </div>
+                    <p class="note">برای واجد شرایط بودن کیف پول خود را متصل کنید (به زودی)</p>
+                </div>
             </div>
-            <p id="copy-feedback"></p>
         </div>
+
+        <!-- Bottom Navigation -->
+        <div class="nav-bar">
+            <div class="nav-item active" onclick="showSection('main')">
+                <i class="fas fa-home"></i>
+                <span>خانه</span>
+            </div>
+            <div class="nav-item" onclick="showSection('market')">
+                <i class="fas fa-store"></i>
+                <span>بازار</span>
+            </div>
+            <div class="nav-item" onclick="showSection('earn')">
+                <i class="fas fa-coins"></i>
+                <span>کسب درآمد</span>
+            </div>
+            <div class="nav-item" onclick="showSection('tools')">
+                <i class="fas fa-tools"></i>
+                <span>ابزار</span>
+            </div>
+            <div class="nav-item" onclick="showSection('airdrop')">
+                <i class="fas fa-parachute-box"></i>
+                <span>ایردراپ</span>
+            </div>
+        </div>
+
     </div>
 
     <script src="app.js"></script>
 </body>
 </html>
-
