@@ -5,142 +5,169 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Civil City Airdrop</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
+    <!-- فونت وزیر برای زیبایی -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <!-- آیکون‌ها -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
 
-    <!-- Splash Screen -->
+    <!-- صفحه لودینگ (Splash Screen) -->
     <div id="splash-screen">
         <div class="splash-content">
-            <img src="https://cdn-icons-png.flaticon.com/512/921/921513.png" alt="Logo" class="splash-logo">
-            <h1>Civil City</h1>
-            <p>توسعه یافته توسط دانشجویان دانشکده عمران<br>دانشگاه تبریز</p>
-            <div class="loading-bar">
-                <div class="progress"></div>
-            </div>
+            <h1>CIVIL CITY</h1>
+            <p>توسعه یافته توسط دانشجویان دانشکده عمران تبریز</p>
+            <div class="loader"></div>
         </div>
     </div>
 
+    <!-- کانتینر اصلی برنامه -->
     <div class="app-container">
-        <!-- Header -->
-        <header class="header">
+        
+        <!-- هدر بالا -->
+        <header class="top-bar">
             <div class="user-info">
-                <span class="level-badge">سطح ۱: مهندس تازه کار</span>
+                <i class="fas fa-user-circle"></i>
+                <span id="username">مهندس عمران</span>
             </div>
-            <div class="stats-card">
-                <div class="balance-container">
-                    <img src="https://cdn-icons-png.flaticon.com/512/122/122047.png" alt="Coin" class="small-coin">
-                    <h1 id="balance">0</h1>
-                </div>
-                <div class="rank-info">
-                    <span>سود در ساعت</span>
-                    <span class="profit-value">+0</span>
-                </div>
-            </div>
+            <div class="level-badge">سطح ۱: تازه کار</div>
         </header>
 
-        <!-- 1. Main Game Area -->
-        <main id="main-view" class="view active">
-            <div class="coin-wrapper">
-                <div class="coin-container" id="coin-btn">
-                    <img src="https://cdn-icons-png.flaticon.com/512/122/122047.png" alt="Tap Coin" class="main-coin-img">
-                </div>
-            </div>
-            <div class="energy-container">
-                <div class="energy-info">
-                    <span id="energy">1000</span> / <span id="max-energy">1000</span>
-                    <span class="energy-icon">⚡</span>
-                </div>
-                <div class="energy-bar-bg">
-                    <div class="energy-bar-fill" id="energy-fill"></div>
-                </div>
-            </div>
-        </main>
+        <!-- محتوای اصلی (ویوها) -->
+        <main id="main-content">
 
-        <!-- 2. Services / Tools View (New) -->
-        <div id="tools-view" class="view" style="display: none;">
-            <h2>جعبه ابزار مهندسی</h2>
-            <div class="tools-grid">
-                <!-- ابزار ۱: محاسبه بتن -->
-                <div class="tool-card" onclick="openTool('concrete')">
-                    <div class="tool-icon">🏗️</div>
-                    <span>محاسبه حجم بتن</span>
+            <!-- ۱. ویوی اصلی (استخراج) -->
+            <section id="home-view" class="view active">
+                <div class="balance-card">
+                    <span class="coin-icon">🪙</span>
+                    <h1 id="balance">0</h1>
                 </div>
-                <!-- ابزار ۲: وزن میلگرد -->
-                <div class="tool-card" onclick="openTool('steel')">
-                    <div class="tool-icon">⚖️</div>
-                    <span>وزن میلگرد</span>
-                </div>
-                <!-- ابزار ۳: قیمت روز -->
-                <div class="tool-card" onclick="openTool('market')">
-                    <div class="tool-icon">💰</div>
-                    <span>قیمت مصالح</span>
-                </div>
-                <!-- ابزار ۴: مقررات ملی -->
-                <div class="tool-card" onclick="openTool('rules')">
-                    <div class="tool-icon">📚</div>
-                    <span>مقررات ملی</span>
-                </div>
-                 <!-- جایگاه ۹۶ ابزار دیگر -->
-                 <div class="tool-card locked">
-                    <div class="tool-icon">🔒</div>
-                    <span>به زودی...</span>
-                </div>
-            </div>
-            
-            <!-- Tool Modal (محل نمایش محاسبات) -->
-            <div id="tool-modal" class="modal">
-                <div class="modal-content">
-                    <span class="close-modal" onclick="closeModal()">&times;</span>
-                    <h3 id="modal-title">عنوان ابزار</h3>
-                    <div id="modal-body">
-                        <!-- محتوا اینجا با جاوااسکریپت پر میشود -->
+                
+                <div class="click-area">
+                    <div id="click-btn" class="main-button">
+                        <i class="fas fa-hard-hat fa-5x"></i>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- 3. Boost View -->
-        <div id="boost-view" class="view" style="display: none;">
-            <h2>تقویت کننده‌ها</h2>
-            <div class="card">
-                <h3>مولتی تپ (Multi-Tap)</h3>
-                <p>با هر کلیک سکه بیشتری بگیرید</p>
-                <button onclick="buyBoost('multitap')">خرید - 500 سکه</button>
-            </div>
-        </div>
+                <div class="energy-status">
+                    <div class="energy-info">
+                        <span>⚡ انرژی</span>
+                        <span id="energy-val">1000/1000</span>
+                    </div>
+                    <div class="energy-bar-bg">
+                        <div id="energy-fill" class="energy-bar-fill" style="width: 100%;"></div>
+                    </div>
+                </div>
+            </section>
 
-        <!-- 4. Friends View -->
-        <div id="friends-view" class="view" style="display: none;">
-            <h2>دوستان</h2>
-            <div class="card">
-                <p>لینک دعوت خود را کپی کنید:</p>
-                <div class="copy-box">t.me/CivilCityBot?start=123</div>
-            </div>
-        </div>
-        
-        <!-- Navigation -->
+            <!-- ۲. ویوی ابزارها (Tools) -->
+            <section id="tools-view" class="view" style="display: none;">
+                <h2>🛠️ جعبه ابزار مهندسی</h2>
+                <div class="tools-grid">
+                    <!-- ابزار ۱ -->
+                    <div class="tool-card" onclick="openTool('concrete')">
+                        <i class="fas fa-cube"></i>
+                        <span>حجم بتن</span>
+                    </div>
+                    <!-- ابزار ۲ (مثال) -->
+                    <div class="tool-card" onclick="openTool('steel')">
+                        <i class="fas fa-layer-group"></i>
+                        <span>وزن میلگرد</span>
+                    </div>
+                    <!-- ابزار ۳ (مثال) -->
+                    <div class="tool-card" onclick="showToast('به زودی...')">
+                        <i class="fas fa-ruler-combined"></i>
+                        <span>تیرچه بلوک</span>
+                    </div>
+                    <div class="tool-card" onclick="showToast('به زودی...')">
+                        <i class="fas fa-drafting-compass"></i>
+                        <span>نقشه خوانی</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ۳. ویوی کسب درآمد (Earn) -->
+            <section id="earn-view" class="view" style="display: none;">
+                <h2>💰 کسب سکه بیشتر</h2>
+                <div class="task-list">
+                    <div class="task-item" onclick="completeTask(this, 5000)">
+                        <div class="task-icon"><i class="fab fa-telegram"></i></div>
+                        <div class="task-desc">
+                            <h4>عضویت در کانال تلگرام</h4>
+                            <span>+5,000 سکه</span>
+                        </div>
+                        <button class="task-btn">انجام</button>
+                    </div>
+                    <div class="task-item" onclick="completeTask(this, 10000)">
+                        <div class="task-icon"><i class="fab fa-youtube"></i></div>
+                        <div class="task-desc">
+                            <h4>سابسکرایب یوتیوب</h4>
+                            <span>+10,000 سکه</span>
+                        </div>
+                        <button class="task-btn">انجام</button>
+                    </div>
+                    <div class="task-item" onclick="completeTask(this, 2500)">
+                        <div class="task-icon"><i class="fas fa-calendar-check"></i></div>
+                        <div class="task-desc">
+                            <h4>پاداش روزانه</h4>
+                            <span>+2,500 سکه</span>
+                        </div>
+                        <button class="task-btn">دریافت</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ۴. ویوی دوستان (Frens) -->
+            <section id="frens-view" class="view" style="display: none;">
+                <h2>👥 دوستان و تیم</h2>
+                <div class="invite-card">
+                    <h3>دوستانت رو دعوت کن!</h3>
+                    <p>به ازای هر دوست ۲۵,۰۰۰ سکه دریافت کنید.</p>
+                    <button class="invite-btn" onclick="copyInviteLink()">کپی لینک دعوت</button>
+                </div>
+                <div class="friends-list">
+                    <p class="empty-state">هنوز کسی را دعوت نکرده‌اید.</p>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- نویگیشن پایین -->
         <nav class="bottom-nav">
-            <button class="nav-item active" onclick="switchTab('main')">
-                <img src="https://cdn-icons-png.flaticon.com/512/122/122047.png" alt="Exchange">
+            <div class="nav-item active" onclick="switchTab('home')">
+                <i class="fas fa-pickaxe"></i>
                 <span>استخراج</span>
-            </button>
-            <button class="nav-item" onclick="switchTab('tools')">
-                <img src="https://cdn-icons-png.flaticon.com/512/1042/1042390.png" alt="Tools">
+            </div>
+            <div class="nav-item" onclick="switchTab('tools')">
+                <i class="fas fa-tools"></i>
                 <span>ابزارها</span>
-            </button>
-            <button class="nav-item" onclick="switchTab('boost')">
-                <img src="https://cdn-icons-png.flaticon.com/512/889/889590.png" alt="Mine">
-                <span>بوست</span>
-            </button>
-            <button class="nav-item" onclick="switchTab('friends')">
-                <img src="https://cdn-icons-png.flaticon.com/512/3112/3112946.png" alt="Friends">
+            </div>
+            <div class="nav-item" onclick="switchTab('earn')">
+                <i class="fas fa-coins"></i>
+                <span>درآمد</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('frens')">
+                <i class="fas fa-users"></i>
                 <span>دوستان</span>
-            </button>
+            </div>
         </nav>
 
-        <div id="toast" class="toast">پیام سیستم</div>
     </div>
+
+    <!-- مودال محاسبات (پاپ آپ) -->
+    <div id="tool-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h3 id="modal-title">عنوان ابزار</h3>
+            <div id="modal-body">
+                <!-- فرم محاسبات اینجا لود می‌شود -->
+            </div>
+            <div id="modal-result" class="result-box"></div>
+        </div>
+    </div>
+
+    <!-- نوتیفیکیشن -->
+    <div id="toast">پیام سیستم</div>
 
     <script src="app.js"></script>
 </body>
