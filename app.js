@@ -1,18 +1,25 @@
-// CivilCity Airdrop Logic - Full Integrated Version
-// Developed by Tabriz University Civil Engineering Students
-
 document.addEventListener('DOMContentLoaded', () => {
-    
-    // --- متغیرهای اصلی ---
-    let balance = localStorage.getItem('balance') ? parseInt(localStorage.getItem('balance')) : 0;
-    let energy = localStorage.getItem('energy') ? parseInt(localStorage.getItem('energy')) : 1000;
-    const maxEnergy = 1000;
-    let level = 1;
-    let pph = localStorage.getItem('pph') ? parseInt(localStorage.getItem('pph')) : 0; // Profit Per Hour
-    let lastSaveTime = localStorage.getItem('lastSaveTime') ? parseInt(localStorage.getItem('lastSaveTime')) : Date.now();
+    // --- Initialize Telegram Web App ---
+    const tg = window.Telegram.WebApp;
+    tg.expand(); // Expand the web app to full screen
 
-    // --- دیتابیس آیتم‌های بازار ---
-        // --- دیتابیس آیتم‌های بازار (توسعه یافته) ---
+    // --- DOM Elements ---
+    const balanceEl = document.getElementById('balance');
+    const pphEl = document.getElementById('pph-value');
+    const coinButton = document.getElementById('coin-button');
+    const energyEl = document.getElementById('energy');
+    const energyFill = document.querySelector('.energy-bar-fill');
+    const marketList = document.getElementById('market-list');
+    const taskList = document.getElementById('task-list');
+
+    // --- Game State Variables ---
+    let balance = 0;
+    let pph = 0; // Profit Per Hour
+    let energy = 1000;
+    const maxEnergy = 1000;
+    const tapValue = 1; // Coins per tap
+
+    // --- دیتابیس آیتم‌های بازار (توسعه یافته) ---
     const marketItems = [
         // بخش 1: نیروی انسانی و ابزار دستی
         { id: 'm1', name: 'دانشجوی ترم یک', profit: 50, basePrice: 500, icon: 'fa-user-graduate', level: 0 },
@@ -43,261 +50,12 @@ document.addEventListener('DOMContentLoaded', () => {
         { id: 'm20', name: 'وزارت راه', profit: 1000000, basePrice: 1000000000, icon: 'fa-globe', level: 0 }
     ];
 
-
-    // --- المان‌های DOM ---
-    const balanceEl = document.getElementById('balance');
-    const energyEl = document.getElementById('energy-text');
-    const energyFill = document.getElementById('energy-fill');
-    const pphEl = document.getElementById('pph-value');
-    const toastEl = document.getElementById('toast');
+    const tasks = [
+        { id: 't1', name: 'عضویت در کانال تلگرام', reward: 5000, completed: false, icon: 'fab fa-telegram' },
+        { id: 't2', name: 'دنبال کردن در اینستاگرام', reward: 5000, completed: false, icon: 'fab fa-instagram' },
+        { id: 't3', name: 'دعوت از ۳ دوست', reward: 25000, completed: false, icon: 'fa-user-friends' },
+    ];
     
-    // --- راه‌اندازی اولیه ---
-    init();
-
-    function init() {
-        // 1. حذف لودینگ
-        setTimeout(() => {
-            document.getElementById('splash-screen').style.display = 'none';
-            document.getElementById('app-container').style.display = 'flex';
-            checkOfflineEarnings(); // بررسی درآمد زمان غیبت
-        }, 2500);
-
-        // 2. لود کردن لول آیتم‌های بازار
-        marketItems.forEach(item => {
-            const savedLvl = localStorage.getItem(`item_lvl_${item.id}`);
-            if(savedLvl) item.level = parseInt(savedLvl);
-        });
-
-        // 3. بروزرسانی UI اولیه
-        updateUI();
-        renderMarket();
-
-        // 4. شروع لوپ‌ها
-        startEnergyRegen();
-        startPassiveIncome();
-        
-        // 5. لیسنر کلیک اصلی
-        document.getElementById('coin-btn').addEventListener('touchstart', handleTap);
-        document.getElementById('coin-btn').addEventListener('click', handleTap); // Fallback for desktop
-    }
-
-    // --- توابع UI و ذخیره‌سازی ---
-        function updateUI() {
-        balanceEl.innerText = balance.toLocaleString();
-        energyEl.innerText = `${Math.floor(energy)} / ${maxEnergy}`;
-        energyFill.style.width = `${(energy / maxEnergy) * 100}%`;
-        pphEl.innerText = pph.toLocaleString();
-        
-        updateRank(); // <--- این خط جدید است
-    }
-
-    function saveData() {
-        localStorage.setItem('balance', balance);
-        localStorage.setItem('energy', energy);
-        localStorage.setItem('pph', pph);
-        localStorage.setItem('lastSaveTime', Date.now());
-    }
-
-    function showToast(msg) {
-        toastEl.innerText = msg;
-        toastEl.classList.add('show');
-        setTimeout(() => toastEl.classList.remove('show'), 2000);
-    }
-
-    // --- لاجیک کلیک (Mining) ---
-    function handleTap(e) {
-        e.preventDefault(); // جلوگیری از زوم دبل کلیک
-        if (energy >= 1) {
-            const tapPower = 1 + Math.floor(pph / 10000); // قدرت کلیک کمی با pph زیاد میشه
-            balance += tapPower;
-            energy -= 1;
-            updateUI();
-            
-            // ویبره کوچک
-            if(navigator.vibrate) navigator.vibrate(10); 
-            
-            // انیمیشن شناور (Floating Text) - ساده شده
-            const rect = e.target.getBoundingClientRect();
-            showFloatingText(rect.left + rect.width/2, rect.top, `+${tapPower}`);
-        }
-    }
-    
-    function showFloatingText(x, y, text) {
-        const el = document.createElement('div');
-        el.innerText = text;
-        el.style.position = 'fixed';
-        el.style.left = x + 'px';
-        el.style.top = y + 'px';
-        el.style.color = '#fff';
-        el.style.fontWeight = 'bold';
-        el.style.pointerEvents = 'none';
-        el.style.transition = 'all 0.5s ease-out';
-        document.body.appendChild(el);
-        
-        setTimeout(() => {
-            el.style.transform = 'translateY(-50px)';
-            el.style.opacity = '0';
-        }, 10);
-        
-        setTimeout(() => el.remove(), 500);
-    }
-
-    // --- سیستم انرژی و سود خودکار ---
-    function startEnergyRegen() {
-        setInterval(() => {
-            if (energy < maxEnergy) {
-                energy += 1;
-                updateUI();
-            }
-        }, 1000);
-    }
-
-    function startPassiveIncome() {
-        // پرداخت سود هر 3 ثانیه
-        setInterval(() => {
-            if (pph > 0) {
-                const profitPerSec = pph / 3600;
-                balance += (profitPerSec * 3); // چون 3 ثانیه صبر کردیم
-                updateUI();
-                saveData(); // سیو مداوم برای جلوگیری از پریدن دیتا
-            }
-        }, 3000);
-    }
-
-    // --- سیستم بازار (Market System) ---
-    function renderMarket() {
-        const grid = document.getElementById('market-grid');
-        grid.innerHTML = '';
-
-        marketItems.forEach(item => {
-            // فرمول قیمت: BasePrice * (1.6 ^ Level)
-            let price = Math.floor(item.basePrice * Math.pow(1.6, item.level));
-            let canBuy = balance >= price;
-            
-            const card = document.createElement('div');
-            card.className = 'market-card';
-            card.innerHTML = `
-                <div class="m-icon"><i class="fas ${item.icon}"></i></div>
-                <div class="m-info">
-                    <h4>${item.name}</h4>
-                    <p>سود: +${item.profit}/ساعت</p>
-                    <span class="m-lvl">لول: ${item.level}</span>
-                </div>
-                <button class="m-buy-btn ${canBuy ? 'active' : ''}" onclick="window.buyItem('${item.id}')">
-                    <span class="price-tag">${formatNum(price)}</span>
-                    <span class="coin-label">سکه</span>
-                </button>
-            `;
-            grid.appendChild(card);
-        });
-    }
-
-    // تابع گلوبال برای دکمه خرید
-    window.buyItem = function(id) {
-        const item = marketItems.find(i => i.id === id);
-        if(!item) return;
-
-        let price = Math.floor(item.basePrice * Math.pow(1.6, item.level));
-
-        if (balance >= price) {
-            balance -= price;
-            item.level++;
-            pph += item.profit;
-            
-            // ذخیره تکی آیتم
-            localStorage.setItem(`item_lvl_${item.id}`, item.level);
-            
-            updateUI();
-            saveData();
-            renderMarket(); // رندر دوباره برای آپدیت قیمت‌ها
-            showToast(`${item.name} ارتقا یافت!`);
-            if(navigator.vibrate) navigator.vibrate([50, 50, 50]);
-        } else {
-            showToast('سکه کافی نیست!');
-        }
-    };
-
-    function formatNum(num) {
-        if(num >= 1000000) return (num/1000000).toFixed(1) + 'M';
-        if(num >= 1000) return (num/1000).toFixed(1) + 'K';
-        return num;
-    }
-
-    // --- سیستم آفلاین (Offline Earnings) ---
-    function checkOfflineEarnings() {
-        const now = Date.now();
-        const diffSeconds = (now - lastSaveTime) / 1000;
-        
-        // اگر بیشتر از 60 ثانیه نبودن و pph دارند
-        if (diffSeconds > 60 && pph > 0) {
-            // حداکثر سود برای 3 ساعت (10800 ثانیه)
-            const effectiveTime = Math.min(diffSeconds, 10800); 
-            const earned = Math.floor((pph / 3600) * effectiveTime);
-            
-            if (earned > 0) {
-                document.getElementById('offline-amount').innerText = `+${earned.toLocaleString()}`;
-                document.getElementById('offline-modal').style.display = 'flex';
-                
-                // تابع دریافت (داخل مودال)
-                window.claimOffline = function() {
-                    balance += earned;
-                    updateUI();
-                    saveData();
-                    document.getElementById('offline-modal').style.display = 'none';
-                };
-            }
-        }
-    }
-
-    // --- ناوبری (Navigation) ---
-    window.switchTab = function(tabId) {
-        // مخفی کردن همه ویوها
-        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-        // نمایش ویوی انتخاب شده
-        document.getElementById(`${tabId}-view`).classList.add('active');
-        
-        // آپدیت اکتیو بودن دکمه‌ها
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-        // پیدا کردن دکمه مربوطه (ساده‌سازی شده با ایندکس)
-        const navMap = { 'home': 0, 'market': 1, 'tools': 2, 'earn': 3 };
-        document.querySelectorAll('.nav-item')[navMap[tabId]].classList.add('active');
-    };
-
-    // --- ابزارها و تسک‌ها (Placeholder Logic) ---
-    window.openTool = function(type) {
-        const modal = document.getElementById('tool-modal');
-        modal.style.display = 'flex';
-        document.getElementById('modal-title').innerText = 'محاسبه حجم بتن';
-    };
-
-    window.closeModal = function() {
-        document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
-    };
-
-    window.calculateConcrete = function() {
-        const l = parseFloat(document.getElementById('inp-l').value);
-        const w = parseFloat(document.getElementById('inp-w').value);
-        const h = parseFloat(document.getElementById('inp-h').value);
-        if(l && w && h) {
-            document.getElementById('calc-result').innerHTML = 
-                `<div style="margin-top:10px; color:#f1c40f;">حجم: ${(l*w*h).toFixed(2)} متر مکعب</div>`;
-        }
-    };
-    
-    window.completeTask = function(btn, reward) {
-        if(btn.disabled) return;
-        btn.innerText = 'در حال بررسی...';
-        setTimeout(() => {
-            balance += reward;
-            updateUI();
-            saveData();
-            btn.innerText = 'انجام شد';
-            btn.disabled = true;
-            btn.style.background = '#2ecc71';
-            showToast(`+${reward} سکه دریافت شد`);
-        }, 2000);
-    };
-});
     // تعریف لول‌های کاربری (Rank)
     const userRanks = [
         { name: 'ترم یکی', min: 0 },
@@ -311,10 +69,27 @@ document.addEventListener('DOMContentLoaded', () => {
         { name: 'وزیر مسکن', min: 200000000 }
     ];
 
-    // تابع آپدیت لول (این را در updateUI صدا می‌زنیم)
+
+    // --- Core Functions ---
+    function hapticFeedback() {
+        if (tg.HapticFeedback) {
+            tg.HapticFeedback.impactOccurred('light');
+        }
+    }
+    
+    function calculatePrice(item) {
+        return Math.floor(item.basePrice * Math.pow(1.6, item.level));
+    }
+
+    function recalculatePPH() {
+        pph = marketItems.reduce((total, item) => {
+            return total + (item.profit * item.level);
+        }, 0);
+    }
+    
     function updateRank() {
         let currentRankName = userRanks[0].name;
-        let currentRankIdx = 1; // برای نمایش Lv.1
+        let currentRankIdx = 1;
 
         for (let i = 0; i < userRanks.length; i++) {
             if (balance >= userRanks[i].min) {
@@ -327,7 +102,312 @@ document.addEventListener('DOMContentLoaded', () => {
         
         document.getElementById('username').innerText = currentRankName;
         document.getElementById('level-value').innerText = currentRankIdx;
-        
-        // آپدیت پروگرس بار (اختیاری اما جذاب)
-        // می‌توانیم رنگ دور دکمه سکه را بر اساس لول عوض کنیم
     }
+
+    function updateUI() {
+        balanceEl.innerText = balance.toLocaleString();
+        energyEl.innerText = `${Math.floor(energy)} / ${maxEnergy}`;
+        energyFill.style.width = `${(energy / maxEnergy) * 100}%`;
+        pphEl.innerText = pph.toLocaleString();
+        updateRank(); // آپدیت رنک کاربر
+    }
+
+    // --- Data Persistence (Save/Load) ---
+    function saveData() {
+        const gameState = {
+            balance: balance,
+            pph: pph,
+            energy: energy,
+            marketLevels: marketItems.map(item => ({ id: item.id, level: item.level })),
+            taskStatus: tasks.map(task => ({id: task.id, completed: task.completed})),
+            lastSaveTime: new Date().getTime()
+        };
+        localStorage.setItem('civilAirdropState', JSON.stringify(gameState));
+    }
+
+    function loadData() {
+        const savedState = localStorage.getItem('civilAirdropState');
+        if (savedState) {
+            const gameState = JSON.parse(savedState);
+            balance = gameState.balance || 0;
+            energy = gameState.energy !== undefined ? gameState.energy : maxEnergy;
+            
+            if (gameState.marketLevels) {
+                gameState.marketLevels.forEach(savedItem => {
+                    const item = marketItems.find(i => i.id === savedItem.id);
+                    if (item) {
+                        item.level = savedItem.level;
+                    }
+                });
+            }
+            if (gameState.taskStatus) {
+                gameState.taskStatus.forEach(savedTask => {
+                   const task = tasks.find(t => t.id === savedTask.id);
+                   if(task) task.completed = savedTask.completed;
+                });
+            }
+
+            recalculatePPH();
+            calculateOfflineEarnings(gameState.lastSaveTime);
+        }
+        populateMarket();
+        populateTasks();
+        updateUI();
+    }
+    
+    function calculateOfflineEarnings(lastSaveTime) {
+        if (!lastSaveTime) return;
+
+        const currentTime = new Date().getTime();
+        const timeDiffSeconds = Math.floor((currentTime - lastSaveTime) / 1000);
+        
+        // Max 3 hours of offline earning
+        const offlineSeconds = Math.min(timeDiffSeconds, 3 * 3600); 
+        
+        if (offlineSeconds > 10) { // Only show if more than 10 seconds offline
+            const offlineEarnings = Math.floor((pph / 3600) * offlineSeconds);
+            balance += offlineEarnings;
+            
+            document.getElementById('offline-earnings').innerText = `+${offlineEarnings.toLocaleString()}`;
+            document.getElementById('offline-earning-modal').style.display = 'flex';
+        }
+    }
+
+
+    // --- Event Handlers & Dynamic Population ---
+    coinButton.addEventListener('click', (e) => {
+        if (energy >= tapValue) {
+            balance += tapValue;
+            energy -= tapValue;
+            updateUI();
+            hapticFeedback();
+
+            // Create and animate floating number
+            const floatingText = document.createElement('span');
+            floatingText.className = 'floating-text';
+            floatingText.innerText = `+${tapValue}`;
+            
+            const rect = coinButton.getBoundingClientRect();
+            // Position randomly around the click
+            const x = e.clientX - rect.left + (Math.random() * 40 - 20);
+            const y = e.clientY - rect.top - 30;
+            
+            floatingText.style.left = `${x}px`;
+            floatingText.style.top = `${y}px`;
+            
+            coinButton.parentElement.appendChild(floatingText);
+
+            setTimeout(() => {
+                floatingText.remove();
+            }, 1000);
+        }
+    });
+
+    function populateMarket() {
+        marketList.innerHTML = '';
+        marketItems.forEach(item => {
+            const price = calculatePrice(item);
+            const card = document.createElement('div');
+            card.className = 'market-card';
+            card.innerHTML = `
+                <div class="card-icon"><i class="fas ${item.icon}"></i></div>
+                <div class="card-details">
+                    <h4>${item.name}</h4>
+                    <p>سود: ${item.profit.toLocaleString()} / ساعت</p>
+                    <p>قیمت: <span class="price-tag">${price.toLocaleString()}</span></p>
+                </div>
+                <div class="card-level">Lv. ${item.level}</div>
+            `;
+            card.onclick = () => openItemModal(item);
+            marketList.appendChild(card);
+        });
+    }
+
+    function populateTasks() {
+        taskList.innerHTML = '';
+        tasks.forEach(task => {
+            const taskEl = document.createElement('div');
+            taskEl.className = `task-card ${task.completed ? 'completed' : ''}`;
+            taskEl.innerHTML = `
+                <i class="${task.icon}"></i>
+                <span>${task.name}</span>
+                <span class="task-reward">+${task.reward.toLocaleString()}</span>
+            `;
+            if (!task.completed) {
+                taskEl.onclick = () => completeTask(task.id);
+            }
+            taskList.appendChild(taskEl);
+        });
+    }
+    
+    function completeTask(taskId) {
+        const task = tasks.find(t => t.id === taskId);
+        if (task && !task.completed) {
+            task.completed = true;
+            balance += task.reward;
+            hapticFeedback();
+            populateTasks();
+            updateUI();
+        }
+    }
+
+
+    // --- Modal Management ---
+    window.openItemModal = (item) => {
+        const modal = document.getElementById('item-modal');
+        const body = document.getElementById('item-modal-body');
+        const price = calculatePrice(item);
+
+        body.innerHTML = `
+            <i class="fas ${item.icon} modal-icon"></i>
+            <h2>${item.name}</h2>
+            <p>سطح فعلی: ${item.level}</p>
+            <p>سود در ساعت: ${item.profit.toLocaleString()}</p>
+            <hr>
+            <h4>ارتقا به سطح ${item.level + 1}</h4>
+            <p>هزینه ارتقا: <span class="price-tag">${price.toLocaleString()}</span></p>
+            <button id="buy-btn" class="modal-button ${balance < price ? 'disabled' : ''}" onclick="buyItem('${item.id}')">خرید</button>
+        `;
+        modal.style.display = 'flex';
+    };
+
+    window.buyItem = (itemId) => {
+        const item = marketItems.find(i => i.id === itemId);
+        if (!item) return;
+
+        const price = calculatePrice(item);
+        if (balance >= price) {
+            balance -= price;
+            item.level++;
+            recalculatePPH();
+            populateMarket();
+            updateUI();
+            closeModal('item-modal');
+            hapticFeedback();
+        } else {
+            alert("موجودی کافی نیست!");
+        }
+    };
+    
+    // --- سیستم ابزارها (پیشرفته) ---
+    window.openTool = function(type) {
+        const modal = document.getElementById('tool-modal');
+        const title = document.getElementById('modal-title');
+        const body = document.getElementById('modal-body');
+        
+        modal.style.display = 'flex';
+        
+        if (type === 'concrete') {
+            title.innerText = 'محاسبه حجم بتن';
+            body.innerHTML = `
+                <div class="calc-form">
+                    <input type="number" id="c-l" placeholder="طول (متر)">
+                    <input type="number" id="c-w" placeholder="عرض (متر)">
+                    <input type="number" id="c-h" placeholder="ضخامت (متر)">
+                    <button onclick="calcConcreteAction()">محاسبه</button>
+                    <div id="calc-res"></div>
+                </div>`;
+        } else if (type === 'rebar') {
+            title.innerText = 'محاسبه وزن میلگرد';
+            body.innerHTML = `
+                <div class="calc-form">
+                    <input type="number" id="r-d" placeholder="نمره میلگرد (مثلا 16)">
+                    <input type="number" id="r-l" placeholder="طول کل (متر)">
+                    <button onclick="calcRebarAction()">محاسبه</button>
+                    <div id="calc-res"></div>
+                </div>`;
+        } else if (type === 'brick') {
+            title.innerText = 'تعداد آجر دیوار';
+            body.innerHTML = `
+                <div class="calc-form">
+                    <input type="number" id="b-l" placeholder="طول دیوار (متر)">
+                    <input type="number" id="b-h" placeholder="ارتفاع دیوار (متر)">
+                    <p style="font-size:0.7rem; color:#aaa;">دیوار ۲۰ سانتی فرض شده</p>
+                    <button onclick="calcBrickAction()">محاسبه</button>
+                    <div id="calc-res"></div>
+                </div>`;
+        } else if (type === 'slope') {
+            title.innerText = 'محاسبه شیب رمپ';
+            body.innerHTML = `
+                <div class="calc-form">
+                    <input type="number" id="s-h" placeholder="اختلاف ارتفاع (متر)">
+                    <input type="number" id="s-l" placeholder="طول افقی (متر)">
+                    <button onclick="calcSlopeAction()">محاسبه</button>
+                    <div id="calc-res"></div>
+                </div>`;
+        }
+    };
+
+    // توابع محاسباتی
+    window.calcConcreteAction = function() {
+        const l = document.getElementById('c-l').value, w = document.getElementById('c-w').value, h = document.getElementById('c-h').value;
+        if(l&&w&&h) showResult(l*w*h, 'متر مکعب');
+    };
+    window.calcRebarAction = function() {
+        const d = document.getElementById('r-d').value, l = document.getElementById('r-l').value;
+        if(d&&l) showResult(((d*d)/162)*l, 'کیلوگرم');
+    };
+    window.calcBrickAction = function() {
+        const l = document.getElementById('b-l').value, h = document.getElementById('b-h').value;
+        if(l&&h) showResult(l*h*100, 'عدد آجر');
+    };
+    window.calcSlopeAction = function() {
+        const h = document.getElementById('s-h').value, l = document.getElementById('s-l').value;
+        if(h&&l) showResult((h/l)*100, 'درصد');
+    };
+
+    function showResult(val, unit) {
+        document.getElementById('calc-res').innerHTML = 
+            `<div style="margin-top:15px; padding:10px; background:#333; border-radius:5px; color:#f1c40f; font-weight:bold;">
+                نتیجه: ${val.toFixed(2)} ${unit}
+            </div>`;
+    }
+
+    window.closeModal = (modalId) => {
+        document.getElementById(modalId).style.display = 'none';
+    };
+
+
+    // --- SPA Navigation ---
+    const navButtons = document.querySelectorAll('.nav-btn');
+    const views = document.querySelectorAll('.view');
+    navButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetViewId = btn.getAttribute('data-view');
+            
+            views.forEach(view => view.classList.remove('active'));
+            document.getElementById(targetViewId).classList.add('active');
+            
+            navButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
+
+
+    // --- Game Loop and Intervals ---
+    // Passive Income
+    setInterval(() => {
+        const profitPerSecond = pph / 3600;
+        balance += profitPerSecond * 3; // Update every 3 seconds
+        updateUI();
+    }, 3000);
+
+    // Energy Regeneration
+    setInterval(() => {
+        if (energy < maxEnergy) {
+            energy = Math.min(maxEnergy, energy + 2); // Regenerate 2 energy per second
+            updateUI();
+        }
+    }, 1000);
+
+    // Auto-save progress
+    setInterval(saveData, 10000); // Save every 10 seconds
+
+    // --- App Initialization ---
+    // Hide splash screen and show app after a delay
+    setTimeout(() => {
+        document.getElementById('splash-screen').style.display = 'none';
+        document.getElementById('app').classList.remove('hidden');
+        loadData(); // Load data after showing the app
+    }, 2000);
+});
