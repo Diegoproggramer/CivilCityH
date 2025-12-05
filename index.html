@@ -3,171 +3,172 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Civil City Airdrop</title>
+    <title>CivilCity Airdrop</title>
     <link rel="stylesheet" href="style.css">
-    <!-- فونت وزیر برای زیبایی -->
-    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <!-- آیکون‌ها -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
 
-    <!-- صفحه لودینگ (Splash Screen) -->
+    <!-- صفحه اسپلش (لودینگ اولیه) -->
     <div id="splash-screen">
         <div class="splash-content">
-            <h1>CIVIL CITY</h1>
-            <p>توسعه یافته توسط دانشجویان دانشکده عمران تبریز</p>
-            <div class="loader"></div>
+            <i class="fas fa-hard-hat fa-3x splash-icon"></i>
+            <h1>CivilCity</h1>
+            <p>توسعه یافته توسط دانشجویان<br>دانشکده عمران دانشگاه تبریز</p>
+            <div class="loading-bar"><div class="bar-fill"></div></div>
         </div>
     </div>
 
     <!-- کانتینر اصلی برنامه -->
-    <div class="app-container">
+    <div id="app-container" style="display: none;">
         
-        <!-- هدر بالا -->
-        <header class="top-bar">
-            <div class="user-info">
-                <i class="fas fa-user-circle"></i>
-                <span id="username">مهندس عمران</span>
+        <!-- هدر: اطلاعات کاربر -->
+        <header class="header">
+            <div class="user-profile">
+                <div class="avatar"><i class="fas fa-user-astronaut"></i></div>
+                <div class="user-details">
+                    <span id="username">مهندس عمران</span>
+                    <span class="level-badge">Lv. <span id="level-value">1</span></span>
+                </div>
             </div>
-            <div class="level-badge">سطح ۱: تازه کار</div>
+            <!-- نمایشگر سود در ساعت -->
+            <div class="pph-badge">
+                <span class="pph-label">سود در ساعت</span>
+                <div class="pph-value-row">
+                    <span id="pph-value">0</span>
+                    <i class="fas fa-coins" style="color: gold; font-size: 0.8rem;"></i>
+                </div>
+            </div>
         </header>
 
         <!-- محتوای اصلی (ویوها) -->
         <main id="main-content">
-
-            <!-- ۱. ویوی اصلی (استخراج) -->
+            
+            <!-- 1. ویوی خانه (ماینینگ) -->
             <section id="home-view" class="view active">
-                <div class="balance-card">
-                    <span class="coin-icon">🪙</span>
+                <div class="balance-container">
+                    <i class="fas fa-coins coin-icon-lg"></i>
                     <h1 id="balance">0</h1>
                 </div>
-                
-                <div class="click-area">
-                    <div id="click-btn" class="main-button">
-                        <i class="fas fa-hard-hat fa-5x"></i>
+
+                <div class="clicker-area">
+                    <div id="coin-btn" class="coin-button">
+                        <div class="inner-coin">
+                            <i class="fas fa-city"></i>
+                        </div>
                     </div>
                 </div>
 
-                <div class="energy-status">
-                    <div class="energy-info">
-                        <span>⚡ انرژی</span>
-                        <span id="energy-val">1000/1000</span>
-                    </div>
+                <div class="energy-container">
+                    <i class="fas fa-bolt energy-icon"></i>
                     <div class="energy-bar-bg">
-                        <div id="energy-fill" class="energy-bar-fill" style="width: 100%;"></div>
+                        <div id="energy-fill" class="energy-fill" style="width: 100%;"></div>
                     </div>
+                    <span id="energy-text">1000 / 1000</span>
                 </div>
             </section>
 
-            <!-- ۲. ویوی ابزارها (Tools) -->
-            <section id="tools-view" class="view" style="display: none;">
-                <h2>🛠️ جعبه ابزار مهندسی</h2>
-                <div class="tools-grid">
-                    <!-- ابزار ۱ -->
+            <!-- 2. ویوی بازار (خرید آیتم) -->
+            <section id="market-view" class="view">
+                <div class="section-header">
+                    <h2>🏗️ بازار تجهیزات</h2>
+                    <p>تجهیزات بخرید تا وقتی خواب هستید سکه جمع کنید!</p>
+                </div>
+                <!-- لیست کارت‌ها توسط جاوااسکریپت پر می‌شود -->
+                <div id="market-grid" class="market-grid"></div>
+            </section>
+
+            <!-- 3. ویوی ابزارها (ماشین‌حساب‌ها) -->
+            <section id="tools-view" class="view">
+                <div class="section-header">
+                    <h2>📐 ابزارهای مهندسی</h2>
+                    <p>به زودی ۱۰۰ ابزار محاسباتی اضافه می‌شود.</p>
+                </div>
+                <div class="tools-list">
                     <div class="tool-card" onclick="openTool('concrete')">
-                        <i class="fas fa-cube"></i>
+                        <i class="fas fa-cubes"></i>
                         <span>حجم بتن</span>
                     </div>
-                    <!-- ابزار ۲ (مثال) -->
-                    <div class="tool-card" onclick="openTool('steel')">
-                        <i class="fas fa-layer-group"></i>
-                        <span>وزن میلگرد</span>
-                    </div>
-                    <!-- ابزار ۳ (مثال) -->
-                    <div class="tool-card" onclick="showToast('به زودی...')">
+                    <div class="tool-card disabled">
                         <i class="fas fa-ruler-combined"></i>
-                        <span>تیرچه بلوک</span>
-                    </div>
-                    <div class="tool-card" onclick="showToast('به زودی...')">
-                        <i class="fas fa-drafting-compass"></i>
-                        <span>نقشه خوانی</span>
+                        <span>مبدل میلگرد (بزودی)</span>
                     </div>
                 </div>
             </section>
 
-            <!-- ۳. ویوی کسب درآمد (Earn) -->
-            <section id="earn-view" class="view" style="display: none;">
-                <h2>💰 کسب سکه بیشتر</h2>
+            <!-- 4. ویوی درآمد (تسک‌ها) -->
+            <section id="earn-view" class="view">
+                <div class="section-header">
+                    <h2>💰 کسب درآمد</h2>
+                    <p>تسک‌ها را انجام دهید و پاداش بگیرید.</p>
+                </div>
+                <!-- تسک‌ها اینجا میان -->
                 <div class="task-list">
-                    <div class="task-item" onclick="completeTask(this, 5000)">
-                        <div class="task-icon"><i class="fab fa-telegram"></i></div>
-                        <div class="task-desc">
-                            <h4>عضویت در کانال تلگرام</h4>
+                    <div class="task-card">
+                        <div class="icon"><i class="fab fa-telegram"></i></div>
+                        <div class="info">
+                            <h4>عضویت در کانال</h4>
                             <span>+5,000 سکه</span>
                         </div>
-                        <button class="task-btn">انجام</button>
-                    </div>
-                    <div class="task-item" onclick="completeTask(this, 10000)">
-                        <div class="task-icon"><i class="fab fa-youtube"></i></div>
-                        <div class="task-desc">
-                            <h4>سابسکرایب یوتیوب</h4>
-                            <span>+10,000 سکه</span>
-                        </div>
-                        <button class="task-btn">انجام</button>
-                    </div>
-                    <div class="task-item" onclick="completeTask(this, 2500)">
-                        <div class="task-icon"><i class="fas fa-calendar-check"></i></div>
-                        <div class="task-desc">
-                            <h4>پاداش روزانه</h4>
-                            <span>+2,500 سکه</span>
-                        </div>
-                        <button class="task-btn">دریافت</button>
+                        <button class="btn-action" onclick="completeTask(this, 5000)">انجام</button>
                     </div>
                 </div>
             </section>
-
-            <!-- ۴. ویوی دوستان (Frens) -->
-            <section id="frens-view" class="view" style="display: none;">
-                <h2>👥 دوستان و تیم</h2>
-                <div class="invite-card">
-                    <h3>دوستانت رو دعوت کن!</h3>
-                    <p>به ازای هر دوست ۲۵,۰۰۰ سکه دریافت کنید.</p>
-                    <button class="invite-btn" onclick="copyInviteLink()">کپی لینک دعوت</button>
-                </div>
-                <div class="friends-list">
-                    <p class="empty-state">هنوز کسی را دعوت نکرده‌اید.</p>
-                </div>
-            </section>
-
         </main>
 
-        <!-- نویگیشن پایین -->
+        <!-- منوی پایین -->
         <nav class="bottom-nav">
             <div class="nav-item active" onclick="switchTab('home')">
                 <i class="fas fa-pickaxe"></i>
                 <span>استخراج</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('market')">
+                <i class="fas fa-shopping-cart"></i>
+                <span>بازار</span>
             </div>
             <div class="nav-item" onclick="switchTab('tools')">
                 <i class="fas fa-tools"></i>
                 <span>ابزارها</span>
             </div>
             <div class="nav-item" onclick="switchTab('earn')">
-                <i class="fas fa-coins"></i>
+                <i class="fas fa-sack-dollar"></i>
                 <span>درآمد</span>
-            </div>
-            <div class="nav-item" onclick="switchTab('frens')">
-                <i class="fas fa-users"></i>
-                <span>دوستان</span>
             </div>
         </nav>
 
     </div>
 
-    <!-- مودال محاسبات (پاپ آپ) -->
+    <!-- پاپ‌آپ نوتیفیکیشن (Toast) -->
+    <div id="toast" class="toast">پیام سیستم</div>
+
+    <!-- مودال ابزارها -->
     <div id="tool-modal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal()">&times;</span>
             <h3 id="modal-title">عنوان ابزار</h3>
             <div id="modal-body">
-                <!-- فرم محاسبات اینجا لود می‌شود -->
+                <!-- فرم محاسبه اینجا قرار می‌گیرد -->
+                <div class="calc-form">
+                    <input type="number" id="inp-l" placeholder="طول (متر)">
+                    <input type="number" id="inp-w" placeholder="عرض (متر)">
+                    <input type="number" id="inp-h" placeholder="ارتفاع (متر)">
+                    <button onclick="calculateConcrete()">محاسبه</button>
+                    <div id="calc-result"></div>
+                </div>
             </div>
-            <div id="modal-result" class="result-box"></div>
         </div>
     </div>
 
-    <!-- نوتیفیکیشن -->
-    <div id="toast">پیام سیستم</div>
+    <!-- مودال دریافت سود آفلاین -->
+    <div id="offline-modal" class="modal">
+        <div class="modal-content center-content">
+            <h3>خوش برگشتی مهندس!</h3>
+            <p>تیم شما در نبودتان کار کرده است:</p>
+            <h2 id="offline-amount" style="color: #2ecc71; margin: 20px 0;">0</h2>
+            <button class="btn-claim" onclick="claimOffline()">دریافت سود</button>
+        </div>
+    </div>
 
     <script src="app.js"></script>
 </body>
