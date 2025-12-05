@@ -3,78 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CivilCoin Airdrop</title>
+    <title>Civil City Airdrop</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap" rel="stylesheet">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://s3.tradingview.com/tv.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <!-- ===== NEW: Splash Screen ===== -->
+    <!-- Splash Screen -->
     <div id="splash-screen">
-        <img src="images/civil-city-logo.png" alt="Civil City Logo" class="splash-logo">
-        <h1>CivilCoin</h1>
-        <p class="splash-credit">توسعه یافته توسط دانشجویان دانشکده عمران دانشگاه تبریز</p>
-    </div>
-
-    <!-- ===== NEW: Toast Notification Container ===== -->
-    <div id="toast-container"></div>
-    
-    <!-- ===== NEW: Daily Reward Modal ===== -->
-    <div id="daily-reward-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-content">
-            <h2>پاداش روزانه!</h2>
-            <p>برای ورود امروزتان 5000 CVC دریافت کردید!</p>
-            <button id="claim-daily-reward-btn">عالیه!</button>
-        </div>
-    </div>
-
-
-    <div id="app-container" style="visibility: hidden;">
-        <!-- ... بقیه محتوای اپلیکیشن بدون تغییر باقی می‌ماند ... -->
-        <!-- ===== صفحه اصلی (کلیک کردن) ===== -->
-        <div id="page-main" class="page active">
-            <header class="main-header">
-                <span class="user-info">
-                    <img src="images/helmet-icon.png" alt="user" class="user-avatar">
-                    <span id="username">کاربر سیویل</span>
-                </span>
-                <span class="league-info">
-                    <img src="images/league-bronze.png" alt="league"> برنز
-                </span>
-            </header>
-
-            <div class="score-display">
-                <img src="images/cvc-coin.png" alt="CVC" class="score-icon">
-                <span id="score-counter">0</span>
-            </div>
-
-            <div class="tap-area">
-                <div id="coin-tapper" class="coin-tapper">
-                    <img src="images/blueprint-coin.png" alt="Tap me">
-                </div>
-            </div>
-
-            <div class="energy-bar-container">
-                ⚡ <span id="energy-counter">1000</span> / <span id="max-energy-counter">1000</span>
-                <div class="energy-bar">
-                    <div id="energy-fill" class="energy-fill"></div>
-                </div>
+        <div class="splash-content">
+            <img src="https://cdn-icons-png.flaticon.com/512/921/921513.png" alt="Logo" class="splash-logo">
+            <h1>Civil City</h1>
+            <p>توسعه یافته توسط دانشجویان دانشکده عمران<br>دانشگاه تبریز</p>
+            <div class="loading-bar">
+                <div class="progress"></div>
             </div>
         </div>
-
-        <!-- ===== صفحات دیگر (تحلیل, ماشین حساب, ارتقاء) ===== -->
-        <!-- این بخش‌ها بدون تغییر باقی می‌مانند -->
-        <div id="page-charts" class="page">...</div>
-        <div id="page-calculator" class="page">...</div>
-        <div id="page-boosts" class="page">...</div>
     </div>
 
-    <!-- ===== نوار ناوبری پایین ===== -->
-    <nav class="bottom-nav" style="visibility: hidden;">
-        <!-- ... بدون تغییر ... -->
-    </nav>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="user-info">
+                <span class="level-badge">سطح ۱: مهندس تازه کار</span>
+            </div>
+            <div class="stats-card">
+                <div class="balance-container">
+                    <img src="https://cdn-icons-png.flaticon.com/512/122/122047.png" alt="Coin" class="small-coin">
+                    <h1 id="balance">0</h1>
+                </div>
+                <div class="rank-info">
+                    <span>سود در ساعت</span>
+                    <span class="profit-value">+0</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Game Area -->
+        <main id="main-view" class="view active">
+            <div class="coin-wrapper">
+                <div class="coin-container" id="coin-btn">
+                    <img src="https://cdn-icons-png.flaticon.com/512/122/122047.png" alt="Tap Coin" class="main-coin-img">
+                </div>
+            </div>
+            
+            <div class="energy-container">
+                <div class="energy-info">
+                    <span id="energy">1000</span> / <span id="max-energy">1000</span>
+                    <span class="energy-icon">⚡</span>
+                </div>
+                <div class="energy-bar-bg">
+                    <div class="energy-bar-fill" id="energy-fill"></div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Features Views (Placeholder for SPA logic) -->
+        <div id="boost-view" class="view" style="display: none;">
+            <h2>تقویت کننده‌ها</h2>
+            <div class="card">
+                <h3>مولتی تپ (Multi-Tap)</h3>
+                <p>با هر کلیک سکه بیشتری بگیرید</p>
+                <button onclick="buyBoost('multitap')">خرید - 500 سکه</button>
+            </div>
+            <div class="card">
+                <h3>مخزن انرژی</h3>
+                <p>افزایش ظرفیت انرژی</p>
+                <button onclick="buyBoost('energy')">خرید - 1000 سکه</button>
+            </div>
+        </div>
+
+        <div id="friends-view" class="view" style="display: none;">
+            <h2>دوستان</h2>
+            <div class="card">
+                <p>لینک دعوت خود را کپی کنید:</p>
+                <div class="copy-box">t.me/CivilCityBot?start=123</div>
+            </div>
+        </div>
+        
+        <!-- Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="switchTab('main')">
+                <img src="https://cdn-icons-png.flaticon.com/512/122/122047.png" alt="Exchange">
+                <span>استخراج</span>
+            </button>
+            <button class="nav-item" onclick="switchTab('boost')">
+                <img src="https://cdn-icons-png.flaticon.com/512/889/889590.png" alt="Mine">
+                <span>بوست</span>
+            </button>
+            <button class="nav-item" onclick="switchTab('friends')">
+                <img src="https://cdn-icons-png.flaticon.com/512/3112/3112946.png" alt="Friends">
+                <span>دوستان</span>
+            </button>
+        </nav>
+
+        <!-- Toast Notification -->
+        <div id="toast" class="toast">پیام سیستم</div>
+    </div>
 
     <script src="app.js"></script>
 </body>
