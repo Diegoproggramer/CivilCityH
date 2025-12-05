@@ -1,67 +1,102 @@
+// CivilCity Airdrop Logic - Full Integrated Version
+// Developed by Tabriz University Civil Engineering Students
+
 document.addEventListener('DOMContentLoaded', () => {
+    
     // --- متغیرهای اصلی ---
     let balance = localStorage.getItem('balance') ? parseInt(localStorage.getItem('balance')) : 0;
-    let energy = 1000;
+    let energy = localStorage.getItem('energy') ? parseInt(localStorage.getItem('energy')) : 1000;
     const maxEnergy = 1000;
+    let level = 1;
+    let pph = localStorage.getItem('pph') ? parseInt(localStorage.getItem('pph')) : 0; // Profit Per Hour
+    let lastSaveTime = localStorage.getItem('lastSaveTime') ? parseInt(localStorage.getItem('lastSaveTime')) : Date.now();
 
-    // المنت‌ها
+    // --- دیتابیس آیتم‌های بازار ---
+    const marketItems = [
+        { id: 'intern', name: 'کارآموز ساده', profit: 100, basePrice: 500, icon: 'fa-user-graduate', level: 0 },
+        { id: 'wheelbarrow', name: 'فرغون حرفه‌ای', profit: 250, basePrice: 1000, icon: 'fa-shopping-cart', level: 0 },
+        { id: 'drill', name: 'دریل هیلتی', profit: 600, basePrice: 2500, icon: 'fa-hammer', level: 0 },
+        { id: 'theodolite', name: 'دوربین نقشه‌برداری', profit: 1500, basePrice: 8000, icon: 'fa-camera', level: 0 },
+        { id: 'mixer', name: 'تراک میکسر', profit: 4000, basePrice: 20000, icon: 'fa-truck-monster', level: 0 },
+        { id: 'crane', name: 'تاور کرین', profit: 10000, basePrice: 50000, icon: 'fa-building', level: 0 }
+    ];
+
+    // --- المان‌های DOM ---
     const balanceEl = document.getElementById('balance');
-    const energyValEl = document.getElementById('energy-val');
-    const energyFillEl = document.getElementById('energy-fill');
-    const splashScreen = document.getElementById('splash-screen');
+    const energyEl = document.getElementById('energy-text');
+    const energyFill = document.getElementById('energy-fill');
+    const pphEl = document.getElementById('pph-value');
+    const toastEl = document.getElementById('toast');
     
-    // --- شروع برنامه ---
-    
-    // بروزرسانی اولیه موجودی
-    updateUI();
+    // --- راه‌اندازی اولیه ---
+    init();
 
-    // حذف اسپلش اسکرین
-    setTimeout(() => {
-        splashScreen.style.opacity = '0';
+    function init() {
+        // 1. حذف لودینگ
         setTimeout(() => {
-            splashScreen.style.display = 'none';
-        }, 500);
-    }, 2000);
+            document.getElementById('splash-screen').style.display = 'none';
+            document.getElementById('app-container').style.display = 'flex';
+            checkOfflineEarnings(); // بررسی درآمد زمان غیبت
+        }, 2500);
 
-    // --- سیستم کلیک و انرژی ---
-    const clickBtn = document.getElementById('click-btn');
-    clickBtn.addEventListener('click', (e) => {
-        if (energy > 0) {
-            // افزایش سکه
-            balance++;
-            energy--;
-            updateUI();
-            saveData();
-            
-            // انیمیشن عدد
-            showFloatingText(e.clientX, e.clientY, '+1');
-            
-            // ویبره
-            if(navigator.vibrate) navigator.vibrate(10);
-        } else {
-            showToast('انرژی تمام شده!');
-        }
-    });
+        // 2. لود کردن لول آیتم‌های بازار
+        marketItems.forEach(item => {
+            const savedLvl = localStorage.getItem(`item_lvl_${item.id}`);
+            if(savedLvl) item.level = parseInt(savedLvl);
+        });
 
-    // پر شدن خودکار انرژی
-    setInterval(() => {
-        if (energy < maxEnergy) {
-            energy++;
-            updateUI();
-        }
-    }, 1000);
+        // 3. بروزرسانی UI اولیه
+        updateUI();
+        renderMarket();
 
-    // --- توابع کمکی ---
+        // 4. شروع لوپ‌ها
+        startEnergyRegen();
+        startPassiveIncome();
+        
+        // 5. لیسنر کلیک اصلی
+        document.getElementById('coin-btn').addEventListener('touchstart', handleTap);
+        document.getElementById('coin-btn').addEventListener('click', handleTap); // Fallback for desktop
+    }
+
+    // --- توابع UI و ذخیره‌سازی ---
     function updateUI() {
         balanceEl.innerText = balance.toLocaleString();
-        energyValEl.innerText = `${energy}/${maxEnergy}`;
-        energyFillEl.style.width = `${(energy / maxEnergy) * 100}%`;
+        energyEl.innerText = `${Math.floor(energy)} / ${maxEnergy}`;
+        energyFill.style.width = `${(energy / maxEnergy) * 100}%`;
+        pphEl.innerText = pph.toLocaleString();
     }
 
     function saveData() {
         localStorage.setItem('balance', balance);
+        localStorage.setItem('energy', energy);
+        localStorage.setItem('pph', pph);
+        localStorage.setItem('lastSaveTime', Date.now());
     }
 
+    function showToast(msg) {
+        toastEl.innerText = msg;
+        toastEl.classList.add('show');
+        setTimeout(() => toastEl.classList.remove('show'), 2000);
+    }
+
+    // --- لاجیک کلیک (Mining) ---
+    function handleTap(e) {
+        e.preventDefault(); // جلوگیری از زوم دبل کلیک
+        if (energy >= 1) {
+            const tapPower = 1 + Math.floor(pph / 10000); // قدرت کلیک کمی با pph زیاد میشه
+            balance += tapPower;
+            energy -= 1;
+            updateUI();
+            
+            // ویبره کوچک
+            if(navigator.vibrate) navigator.vibrate(10); 
+            
+            // انیمیشن شناور (Floating Text) - ساده شده
+            const rect = e.target.getBoundingClientRect();
+            showFloatingText(rect.left + rect.width/2, rect.top, `+${tapPower}`);
+        }
+    }
+    
     function showFloatingText(x, y, text) {
         const el = document.createElement('div');
         el.innerText = text;
@@ -69,126 +104,172 @@ document.addEventListener('DOMContentLoaded', () => {
         el.style.left = x + 'px';
         el.style.top = y + 'px';
         el.style.color = '#fff';
+        el.style.fontWeight = 'bold';
         el.style.pointerEvents = 'none';
-        el.style.animation = 'floatUp 1s ease-out';
+        el.style.transition = 'all 0.5s ease-out';
         document.body.appendChild(el);
-        setTimeout(() => el.remove(), 1000);
+        
+        setTimeout(() => {
+            el.style.transform = 'translateY(-50px)';
+            el.style.opacity = '0';
+        }, 10);
+        
+        setTimeout(() => el.remove(), 500);
     }
 
-    // --- سیستم نویگیشن (تب‌ها) ---
-    window.switchTab = function(tabName) {
-        // مخفی کردن همه ویوها
-        document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
-        // غیرفعال کردن همه دکمه‌های پایین
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        
-        // نمایش ویو انتخاب شده
-        const target = document.getElementById(tabName + '-view');
-        if(target) target.style.display = tabName === 'home' ? 'flex' : 'block';
-        
-        // فعال کردن دکمه مربوطه
-        event.currentTarget.classList.add('active');
-    };
+    // --- سیستم انرژی و سود خودکار ---
+    function startEnergyRegen() {
+        setInterval(() => {
+            if (energy < maxEnergy) {
+                energy += 1;
+                updateUI();
+            }
+        }, 1000);
+    }
 
-    // --- سیستم تسک‌ها (Earn) ---
-    window.completeTask = function(element, reward) {
-        if(element.classList.contains('completed')) return;
-        
-        element.classList.add('completed');
-        element.querySelector('.task-btn').innerText = 'انجام شد';
-        
-        balance += reward;
-        updateUI();
-        saveData();
-        showToast(`تبریک! ${reward.toLocaleString()} سکه دریافت کردید.`);
-        
-        // ویبره طولانی تر
-        if(navigator.vibrate) navigator.vibrate([50, 50, 50]);
-    };
+    function startPassiveIncome() {
+        // پرداخت سود هر 3 ثانیه
+        setInterval(() => {
+            if (pph > 0) {
+                const profitPerSec = pph / 3600;
+                balance += (profitPerSec * 3); // چون 3 ثانیه صبر کردیم
+                updateUI();
+                saveData(); // سیو مداوم برای جلوگیری از پریدن دیتا
+            }
+        }, 3000);
+    }
 
-    // --- سیستم ابزارها (Tools Modal) ---
-    const modal = document.getElementById('tool-modal');
-    const modalTitle = document.getElementById('modal-title');
-    const modalBody = document.getElementById('modal-body');
-    const modalResult = document.getElementById('modal-result');
+    // --- سیستم بازار (Market System) ---
+    function renderMarket() {
+        const grid = document.getElementById('market-grid');
+        grid.innerHTML = '';
 
-    window.openTool = function(toolType) {
-        modal.style.display = 'flex';
-        modalResult.style.display = 'none';
-        
-        if (toolType === 'concrete') {
-            modalTitle.innerText = 'محاسبه حجم بتن';
-            modalBody.innerHTML = `
-                <p>ابعاد را به متر وارد کنید:</p>
-                <input type="number" id="c-len" placeholder="طول (m)">
-                <input type="number" id="c-wid" placeholder="عرض (m)">
-                <input type="number" id="c-hei" placeholder="ارتفاع/ضخامت (m)">
-                <button onclick="calculateConcrete()">محاسبه</button>
+        marketItems.forEach(item => {
+            // فرمول قیمت: BasePrice * (1.6 ^ Level)
+            let price = Math.floor(item.basePrice * Math.pow(1.6, item.level));
+            let canBuy = balance >= price;
+            
+            const card = document.createElement('div');
+            card.className = 'market-card';
+            card.innerHTML = `
+                <div class="m-icon"><i class="fas ${item.icon}"></i></div>
+                <div class="m-info">
+                    <h4>${item.name}</h4>
+                    <p>سود: +${item.profit}/ساعت</p>
+                    <span class="m-lvl">لول: ${item.level}</span>
+                </div>
+                <button class="m-buy-btn ${canBuy ? 'active' : ''}" onclick="window.buyItem('${item.id}')">
+                    <span class="price-tag">${formatNum(price)}</span>
+                    <span class="coin-label">سکه</span>
+                </button>
             `;
-        } else if (toolType === 'steel') {
-            modalTitle.innerText = 'محاسبه وزن میلگرد';
-            modalBody.innerHTML = `
-                <p>مشخصات میلگرد:</p>
-                <input type="number" id="s-dia" placeholder="قطر (mm)">
-                <input type="number" id="s-len" placeholder="طول کل (m)">
-                <button onclick="calculateSteel()">محاسبه</button>
-            `;
+            grid.appendChild(card);
+        });
+    }
+
+    // تابع گلوبال برای دکمه خرید
+    window.buyItem = function(id) {
+        const item = marketItems.find(i => i.id === id);
+        if(!item) return;
+
+        let price = Math.floor(item.basePrice * Math.pow(1.6, item.level));
+
+        if (balance >= price) {
+            balance -= price;
+            item.level++;
+            pph += item.profit;
+            
+            // ذخیره تکی آیتم
+            localStorage.setItem(`item_lvl_${item.id}`, item.level);
+            
+            updateUI();
+            saveData();
+            renderMarket(); // رندر دوباره برای آپدیت قیمت‌ها
+            showToast(`${item.name} ارتقا یافت!`);
+            if(navigator.vibrate) navigator.vibrate([50, 50, 50]);
+        } else {
+            showToast('سکه کافی نیست!');
         }
+    };
+
+    function formatNum(num) {
+        if(num >= 1000000) return (num/1000000).toFixed(1) + 'M';
+        if(num >= 1000) return (num/1000).toFixed(1) + 'K';
+        return num;
+    }
+
+    // --- سیستم آفلاین (Offline Earnings) ---
+    function checkOfflineEarnings() {
+        const now = Date.now();
+        const diffSeconds = (now - lastSaveTime) / 1000;
+        
+        // اگر بیشتر از 60 ثانیه نبودن و pph دارند
+        if (diffSeconds > 60 && pph > 0) {
+            // حداکثر سود برای 3 ساعت (10800 ثانیه)
+            const effectiveTime = Math.min(diffSeconds, 10800); 
+            const earned = Math.floor((pph / 3600) * effectiveTime);
+            
+            if (earned > 0) {
+                document.getElementById('offline-amount').innerText = `+${earned.toLocaleString()}`;
+                document.getElementById('offline-modal').style.display = 'flex';
+                
+                // تابع دریافت (داخل مودال)
+                window.claimOffline = function() {
+                    balance += earned;
+                    updateUI();
+                    saveData();
+                    document.getElementById('offline-modal').style.display = 'none';
+                };
+            }
+        }
+    }
+
+    // --- ناوبری (Navigation) ---
+    window.switchTab = function(tabId) {
+        // مخفی کردن همه ویوها
+        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+        // نمایش ویوی انتخاب شده
+        document.getElementById(`${tabId}-view`).classList.add('active');
+        
+        // آپدیت اکتیو بودن دکمه‌ها
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        // پیدا کردن دکمه مربوطه (ساده‌سازی شده با ایندکس)
+        const navMap = { 'home': 0, 'market': 1, 'tools': 2, 'earn': 3 };
+        document.querySelectorAll('.nav-item')[navMap[tabId]].classList.add('active');
+    };
+
+    // --- ابزارها و تسک‌ها (Placeholder Logic) ---
+    window.openTool = function(type) {
+        const modal = document.getElementById('tool-modal');
+        modal.style.display = 'flex';
+        document.getElementById('modal-title').innerText = 'محاسبه حجم بتن';
     };
 
     window.closeModal = function() {
-        modal.style.display = 'none';
+        document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
     };
 
-    // --- منطق محاسبات ابزارها ---
     window.calculateConcrete = function() {
-        const l = parseFloat(document.getElementById('c-len').value);
-        const w = parseFloat(document.getElementById('c-wid').value);
-        const h = parseFloat(document.getElementById('c-hei').value);
-        
+        const l = parseFloat(document.getElementById('inp-l').value);
+        const w = parseFloat(document.getElementById('inp-w').value);
+        const h = parseFloat(document.getElementById('inp-h').value);
         if(l && w && h) {
-            const vol = l * w * h;
-            const cement = vol * 350; // فرض ۳۵۰ کیلو سیمان در هر متر مکعب
-            
-            modalResult.style.display = 'block';
-            modalResult.innerHTML = `
-                حجم بتن: ${vol.toFixed(2)} متر مکعب<br>
-                سیمان تقریبی: ${cement.toFixed(0)} کیلوگرم
-            `;
-        } else {
-            showToast('لطفا همه اعداد را وارد کنید');
+            document.getElementById('calc-result').innerHTML = 
+                `<div style="margin-top:10px; color:#f1c40f;">حجم: ${(l*w*h).toFixed(2)} متر مکعب</div>`;
         }
     };
-
-    window.calculateSteel = function() {
-        const d = parseFloat(document.getElementById('s-dia').value);
-        const l = parseFloat(document.getElementById('s-len').value);
-        
-        if(d && l) {
-            // فرمول: (D^2 / 162) * L
-            const weight = ((d * d) / 162) * l;
-            
-            modalResult.style.display = 'block';
-            modalResult.innerHTML = `
-                وزن میلگرد: ${weight.toFixed(2)} کیلوگرم
-            `;
-        } else {
-            showToast('لطفا همه اعداد را وارد کنید');
-        }
-    };
-
-    window.copyInviteLink = function() {
-        const link = "https://t.me/CivilCityBot?start=12345"; // لینک نمونه
-        navigator.clipboard.writeText(link).then(() => {
-            showToast('لینک کپی شد!');
-        });
-    };
-
-    // --- سیستم نوتیفیکیشن ---
-    window.showToast = function(message) {
-        const toast = document.getElementById("toast");
-        toast.className = "toast show";
-        toast.innerText = message;
-        setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
+    
+    window.completeTask = function(btn, reward) {
+        if(btn.disabled) return;
+        btn.innerText = 'در حال بررسی...';
+        setTimeout(() => {
+            balance += reward;
+            updateUI();
+            saveData();
+            btn.innerText = 'انجام شد';
+            btn.disabled = true;
+            btn.style.background = '#2ecc71';
+            showToast(`+${reward} سکه دریافت شد`);
+        }, 2000);
     };
 });
