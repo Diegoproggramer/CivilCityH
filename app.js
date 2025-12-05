@@ -1,297 +1,437 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- State Variables ---
-    let balance = 0;
-    let energy = 1000;
-    const maxEnergy = 1000;
-    let pph = 0; // Profit Per Hour
-    let lastTimestamp = new Date().getTime();
+    // Game State
+    let gameState = {
+        balance: 0,
+        energy: 1000,
+        maxEnergy: 1000,
+        energyPerClick: 1,
+        energyRecoveryRate: 1, // per second
+        pph: 0, // Profit Per Hour
+        rank: 1,
+        lastOnline: new Date().getTime(),
+        dailyReward: {
+            lastClaimedDay: -1,
+            streak: 0
+        },
+        marketItems: {} // level of each item
+    };
 
-    // --- DOM Elements ---
-    const loadingScreen = document.getElementById('loading-screen');
-    const mainContent = document.getElementById('main-content');
+    const CIVIL_TOKEN_SUPPLY = 100000000000;
+    const AIRDROP_END_DATE = new Date('2026-03-21T00:00:00'); // Persian New Year!
+
+    // DOM Elements
     const balanceEl = document.getElementById('balance');
     const energyEl = document.getElementById('energy');
-    const energyBarFillEl = document.querySelector('.energy-bar-fill');
-    const pphEl = document.getElementById('pph');
+    const maxEnergyEl = document.getElementById('max-energy');
+    const clickerBtn = document.getElementById('clicker-btn');
+    const pphValueEl = document.getElementById('pph-value');
     const rankNameEl = document.getElementById('rank-name');
-    const rankLevelEl = document.getElementById('rank-level');
-    const coinButton = document.getElementById('coin-button');
-    const marketContainer = document.getElementById('market-items-container');
 
-    // --- Ranks ---
-    const ranks = [
-        { name: "ترم یکی", min: 0 }, { name: "کارآموز", min: 50000 },
-        { name: "کمک مهندس", min: 250000 }, { name: "مهندس اجرایی", min: 1000000 },
-        { name: "سرپرست کارگاه", min: 5000000 }, { name: "مدیر پروژه", min: 25000000 },
-        { name: "مدیرعامل", min: 100000000 }, { name: "انبوه ساز", min: 500000000 },
-        { name: "مافیای مسکن", min: 2000000000 }, { name: "وزیر مسکن", min: 10000000000 }
+    // Views
+    const views = document.querySelectorAll('.view');
+    const navItems = document.querySelectorAll('.nav-item');
+
+    // Modals
+    const dailyRewardModal = document.getElementById('daily-reward-modal');
+    const inviteModal = document.getElementById('invite-modal');
+    const dailyRewardBtn = document.getElementById('daily-reward-btn');
+    const inviteBtn = document.getElementById('invite-btn');
+    const claimDailyRewardBtn = document.getElementById('claim-daily-reward-btn');
+    const calendarGrid = document.querySelector('.calendar-grid');
+
+    // Market
+    const marketItemsContainer = document.getElementById('market-items');
+
+    // Airdrop
+    const countdownEl = document.getElementById('airdrop-countdown');
+    const estimatedAirdropEl = document.getElementById('estimated-airdrop');
+
+    const RANKS = [
+        { level: 1, name: "ترم یکی", threshold: 0 },
+        { level: 2, name: "مهندس تازه‌کار", threshold: 5000 },
+        { level: 3, name: "کمک مهندس", threshold: 25000 },
+        { level: 4, name: "مهندس", threshold: 100000 },
+        { level: 5, name: "مهندس ارشد", threshold: 500000 },
+        { level: 6, name: "سرپرست کارگاه", threshold: 2000000 },
+        { level: 7, name: "رئیس کارگاه", threshold: 10000000 },
+        { level: 8, name: "پیمانکار", threshold: 50000000 },
+        { level: 9, name: "سازنده برج", threshold: 250000000 },
+        { level: 10, name: "وزیر مسکن", threshold: 1000000000 },
     ];
 
-    // --- Market Items ---
-    const marketItems = [
-        { id: 1, name: "کلاه ایمنی", icon: "fa-hard-hat", basePrice: 50, pph: 5, level: 0 },
-        { id: 2, name: "بیل", icon: "fa-person-digging", basePrice: 200, pph: 15, level: 0 },
-        { id: 3, name: "فرغون", icon: "fa-cart-flatbed", basePrice: 1000, pph: 50, level: 0 },
-        { id: 4, name: "میکسر بتن", icon: "fa-blender", basePrice: 5000, pph: 200, level: 0 },
-        { id: 5, name: "داربست", icon: "fa-network-wired", basePrice: 20000, pph: 750, level: 0 },
-        { id: 6, name: "جرثقیل", icon: "fa-truck-pickup", basePrice: 100000, pph: 3000, level: 0 },
-        { id: 7, name: "نقشه معماری", icon: "fa-ruler-combined", basePrice: 400000, pph: 10000, level: 0 },
-        { id: 8, name: "تیم کارگری", icon: "fa-users", basePrice: 1500000, pph: 35000, level: 0 },
-        { id: 9, name: "مهندس ناظر", icon: "fa-user-tie", basePrice: 5000000, pph: 100000, level: 0 },
-        { id: 10, name: "پروانه ساخت", icon: "fa-file-signature", basePrice: 20000000, pph: 350000, level: 0 },
-        { id: 11, name: "تراکتور", icon: "fa-tractor", basePrice: 50000000, pph: 700000, level: 0 },
-        { id: 12, name: "زمین", icon: "fa-map", basePrice: 150000000, pph: 1800000, level: 0 },
-        { id: 13, name: "مجتمع مسکونی", icon: "fa-building", basePrice: 500000000, pph: 5000000, level: 0 },
-        { id: 14, name: "کارخانه سیمان", icon: "fa-industry", basePrice: 1200000000, pph: 11000000, level: 0 },
-        { id: 15, "name": "شرکت پیمانکاری", "icon": "fa-briefcase", "basePrice": 3000000000, "pph": 25000000, "level": 0 },
-        { id: 16, "name": "برج تجاری", "icon": "fa-city", "basePrice": 7500000000, "pph": 60000000, "level": 0 },
-        { id: 17, "name": "مالکیت معدن", "icon": "fa-gem", "basePrice": 18000000000, "pph": 130000000, "level": 0 },
-        { id: 18, "name": "پروژه سدسازی", "icon": "fa-water", "basePrice": 40000000000, "pph": 280000000, "level": 0 },
-        { id: 19, "name": "قرارداد مترو", "icon": "fa-train-subway", "basePrice": 100000000000, "pph": 650000000, "level": 0 },
-        { id: 20, "name": "کلان‌شهر", "icon": "fa-satellite", "basePrice": 250000000000, "pph": 1500000000, "level": 0 }
+    const MARKET_STRUCTURE = [
+        { id: 'helmet', name: 'کلاه ایمنی', basePrice: 50, pph: 1, icon: 'fa-hard-hat' },
+        { id: 'vest', name: 'جلیقه', basePrice: 200, pph: 3, icon: 'fa-tshirt' },
+        { id: 'trolley', name: 'فرغون', basePrice: 1000, pph: 10, icon: 'fa-dolly' },
+        { id: 'mixer', name: 'میکسر بتن', basePrice: 5000, pph: 40, icon: 'fa-truck-monster' },
+        { id: 'dumper', name: 'دامپر', basePrice: 20000, pph: 150, icon: 'fa-truck-pickup' },
+        { id: 'truck', name: 'کامیون', basePrice: 100000, pph: 500, icon: 'fa-truck' },
+        { id: 'blueprint', name: 'نقشه معماری', basePrice: 400000, pph: 1500, icon: 'fa-ruler-combined' },
+        { id: 'supervisor', name: 'تیم کارگری', basePrice: 1500000, pph: 5000, icon: 'fa-users' },
+        { id: 'architect', name: 'مهندس ناظر', basePrice: 5000000, pph: 15000, icon: 'fa-user-tie' },
+        { id: 'license', name: 'پروانه ساخت', basePrice: 12000000, pph: 35000, icon: 'fa-file-signature' },
+        { id: 'crane', name: 'جرثقیل', basePrice: 30000000, pph: 80000, icon: 'fa-crane' }, // Using a creative icon
+        { id: 'excavator', name: 'بیل مکانیکی', basePrice: 75000000, pph: 180000, icon: 'fa-tractor' },
+        { id: 'land', name: 'خرید زمین', basePrice: 200000000, pph: 400000, icon: 'fa-map-marked-alt' },
+        { id: 'scaffolding', name: 'داربست', basePrice: 500000000, pph: 900000, icon: 'fa-border-all' },
+        { id: 'concrete_pump', name: 'پمپ بتن', basePrice: 1200000000, pph: 2000000, icon: 'fa-pump-soap' }, // Creative icon
+        { id: 'asphalt_paver', name: 'دستگاه آسفالت', basePrice: 3000000000, pph: 4500000, icon: 'fa-road' },
+        { id: 'office', name: 'دفتر فنی', basePrice: 7000000000, pph: 10000000, icon: 'fa-building' },
+        { id: 'consulting_firm', name: 'شرکت مشاور', basePrice: 15000000000, pph: 20000000, icon: 'fa-sitemap' },
+        { id: 'city_contract', name: 'قرارداد شهری', basePrice: 35000000000, pph: 45000000, icon: 'fa-city' },
+        { id: 'megaproject', name: 'مگا پروژه', basePrice: 100000000000, pph: 100000000, icon: 'fa-landmark' }
     ];
+    
+    const DAILY_REWARDS = [500, 1000, 2000, 4000, 8000, 16000, 32000];
 
-    // --- Core Functions ---
-    const hapticFeedback = () => {
-        if (navigator.vibrate) navigator.vibrate(50);
-    };
-
-    const updateUI = () => {
-        balanceEl.innerText = Math.floor(balance).toLocaleString();
-        energyEl.innerText = `${energy} / ${maxEnergy}`;
-        energyBarFillEl.style.width = `${(energy / maxEnergy) * 100}%`;
-        pphEl.innerText = pph.toLocaleString();
-
-        const currentRank = [...ranks].reverse().find(r => balance >= r.min);
-        if (currentRank) {
-            rankNameEl.innerText = currentRank.name;
-            rankLevelEl.innerText = `Lv. ${ranks.indexOf(currentRank) + 1}`;
-        }
-    };
-
-    const showFloatingText = (text, x, y) => {
-        const floatText = document.createElement('div');
-        floatText.className = 'floating-text';
-        floatText.innerText = text;
-        document.body.appendChild(floatText);
-        floatText.style.left = `${x}px`;
-        floatText.style.top = `${y}px`;
-        setTimeout(() => floatText.remove(), 1500);
-    };
-
-    // --- Event Listeners and Game Logic ---
-    coinButton.addEventListener('click', (e) => {
-        if (energy > 0) {
-            const tapValue = 1;
-            balance += tapValue;
-            energy -= tapValue;
+    // --- Initialization ---
+    function init() {
+        loadGameState();
+        
+        // Splash screen logic
+        const splashScreen = document.getElementById('splash-screen');
+        const gameContent = document.getElementById('game-content');
+        const progress = document.querySelector('.progress');
+        
+        let width = 0;
+        const interval = setInterval(() => {
+            width += 25;
+            progress.style.width = width + '%';
+            if (width >= 100) {
+                clearInterval(interval);
+                setTimeout(() => {
+                    splashScreen.classList.add('hidden');
+                    gameContent.classList.remove('hidden');
+                    
+                    // Start game loops after splash screen
+                    setInterval(energyRecovery, 1000);
+                    setInterval(passiveIncome, 1000); // Check every second for more responsive PPH
+                    setInterval(saveGameState, 5000); // Save every 5 seconds
+                    
+                    // Initial UI setup
+                    renderMarket();
+                    renderDailyRewardCalendar();
+                    updateUI();
+                    updateAirdropCountdown(); // Start the countdown
+                }, 500);
+            }
+        }, 500);
+    }
+    
+    // --- Core Game Logic ---
+    clickerBtn.addEventListener('click', () => {
+        if (gameState.energy >= gameState.energyPerClick) {
+            gameState.balance += gameState.energyPerClick;
+            gameState.energy -= gameState.energyPerClick;
             updateUI();
-            hapticFeedback();
-            
-            const rect = coinButton.getBoundingClientRect();
-            const x = e.clientX || rect.left + rect.width / 2;
-            const y = e.clientY || rect.top + rect.height / 2;
-            showFloatingText(`+${tapValue}`, x, y);
+            createFloatingText(`+${gameState.energyPerClick}`);
         }
     });
 
-    window.switchView = (viewId, button) => {
-        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        document.getElementById(viewId).classList.add('active');
+    function energyRecovery() {
+        if (gameState.energy < gameState.maxEnergy) {
+            gameState.energy = Math.min(gameState.maxEnergy, gameState.energy + gameState.energyRecoveryRate);
+            updateUI();
+        }
+    }
 
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        button.classList.add('active');
-    };
+    function passiveIncome() {
+        // PPH is "per hour", so we calculate income per second
+        const incomePerSecond = gameState.pph / 3600;
+        gameState.balance += incomePerSecond;
+        updateUI();
+    }
+    
+    // --- UI Update and Rendering ---
+    function updateUI() {
+        balanceEl.textContent = formatNumber(Math.floor(gameState.balance));
+        energyEl.textContent = Math.floor(gameState.energy);
+        maxEnergyEl.textContent = gameState.maxEnergy;
+        pphValueEl.textContent = formatNumber(gameState.pph);
+        
+        updateRank();
+        updateMarketItems();
+        updateDailyRewardStatus();
+        updateAirdropView();
+    }
 
-    window.closeModal = (modalId) => {
-        document.getElementById(modalId).style.display = 'none';
-    };
+    function updateRank() {
+        const currentRank = RANKS.slice().reverse().find(r => gameState.balance >= r.threshold);
+        if (currentRank && currentRank.level !== gameState.rank) {
+            gameState.rank = currentRank.level;
+        }
+        rankNameEl.textContent = `${currentRank.name} (Lv. ${currentRank.level})`;
+    }
+    
+    function createFloatingText(text) {
+        const floatingText = document.createElement('div');
+        floatingText.textContent = text;
+        floatingText.className = 'floating-text';
+        
+        const mainView = document.getElementById('main-view');
+        mainView.appendChild(floatingText);
+        
+        // Randomize position
+        const x = Math.random() * 80 + 10; // 10% to 90%
+        const y = Math.random() * 20 + 40; // 40% to 60%
+        floatingText.style.left = `${x}%`;
+        floatingText.style.top = `${y}%`;
+        
+        setTimeout(() => {
+            floatingText.remove();
+        }, 2000);
+    }
+    
+    // --- View Navigation ---
+    window.showView = (viewId) => {
+        views.forEach(view => view.classList.add('hidden'));
+        document.getElementById(viewId).classList.remove('hidden');
 
+        navItems.forEach(item => item.classList.remove('active'));
+        const activeNavItem = Array.from(navItems).find(item => item.getAttribute('onclick').includes(viewId));
+        if(activeNavItem) activeNavItem.classList.add('active');
+        
+        if (viewId === 'market-view') updateMarketItems();
+        if (viewId === 'airdrop-view') updateAirdropView();
+    }
+    
     // --- Market Logic ---
-    const populateMarket = () => {
-        marketContainer.innerHTML = '';
-        marketItems.forEach(item => {
-            const price = Math.floor(item.basePrice * Math.pow(1.6, item.level));
-            const card = document.createElement('div');
-            card.className = 'market-card';
-            card.innerHTML = `
-                <i class="fas ${item.icon} market-icon"></i>
-                <div class="market-name">${item.name}</div>
-                <div class="market-level">Lv. ${item.level} | +${item.pph.toLocaleString()} PPH</div>
-                <div class="market-price">
-                    <i class="fas fa-coins"></i> ${price.toLocaleString()}
+    function renderMarket() {
+        marketItemsContainer.innerHTML = '';
+        MARKET_STRUCTURE.forEach(item => {
+            if (!gameState.marketItems[item.id]) {
+                gameState.marketItems[item.id] = 0; // Initialize level
+            }
+            
+            const itemEl = document.createElement('div');
+            itemEl.className = 'market-item';
+            itemEl.id = `market-item-${item.id}`;
+            itemEl.innerHTML = `
+                <i class="fas ${item.icon}"></i>
+                <div class="item-info">
+                    <p>${item.name}</p>
+                    <p>(Lv. <span id="level-${item.id}">0</span>) | +<span id="pph-${item.id}">${item.pph}</span> PPH</p>
+                </div>
+                <div class="item-price">
+                    <i class="fas fa-coins"></i>
+                    <span id="price-${item.id}">${formatNumber(item.basePrice)}</span>
                 </div>
             `;
-            if (balance < price) {
-                card.classList.add('disabled');
-            }
-            card.onclick = () => buyMarketItem(item.id);
-            marketContainer.appendChild(card);
+            itemEl.addEventListener('click', () => buyMarketItem(item.id));
+            marketItemsContainer.appendChild(itemEl);
         });
-    };
-
-    window.buyMarketItem = (itemId) => {
-        const item = marketItems.find(i => i.id === itemId);
-        const price = Math.floor(item.basePrice * Math.pow(1.6, item.level));
-        if (balance >= price) {
-            balance -= price;
-            item.level++;
-            pph += item.pph;
-            hapticFeedback();
-            populateMarket(); // Refresh market view
-            updateUI();
-        }
-    };
-
-    // --- Passive Income & Energy Regeneration ---
-    setInterval(() => {
-        if (energy < maxEnergy) {
-            energy = Math.min(maxEnergy, energy + 2); // Regen 2 energy per second
-            updateUI();
-        }
-    }, 1000);
+        updateMarketItems();
+    }
     
-    setInterval(() => { // Passive income calculation
-        const now = new Date().getTime();
-        const elapsedSeconds = (now - lastTimestamp) / 1000;
-        balance += (pph / 3600) * elapsedSeconds;
-        lastTimestamp = now;
-        updateUI();
-        // Since this runs often, we can refresh market state here too
-        if (document.getElementById('market-view').classList.contains('active')) {
-             populateMarket();
-        }
-    }, 5000); // Update every 5 seconds
-
-    // --- Offline Earnings ---
-    const calculateOfflineEarnings = () => {
-        const lastVisit = localStorage.getItem('civilCityLastVisit');
-        const now = new Date().getTime();
-        // const storedState = JSON.parse(localStorage.getItem('civilCityState')); // Will be used later
+    function buyMarketItem(itemId) {
+        const item = MARKET_STRUCTURE.find(i => i.id === itemId);
+        const currentLevel = gameState.marketItems[itemId];
+        const price = Math.floor(item.basePrice * Math.pow(1.15, currentLevel));
         
-        // For now, let's use placeholder values for PPH from previous session
-        const storedPPH = parseInt(localStorage.getItem('civilCityPPH') || '0');
-
-        if (lastVisit && storedPPH > 0) {
-            let offlineSeconds = (now - parseInt(lastVisit)) / 1000;
-            offlineSeconds = Math.min(offlineSeconds, 3 * 60 * 60); // Max 3 hours offline earnings
+        if (gameState.balance >= price) {
+            gameState.balance -= price;
+            gameState.marketItems[itemId]++;
+            gameState.pph += item.pph;
+            updateUI();
+        }
+    }
+    
+    function updateMarketItems() {
+        MARKET_STRUCTURE.forEach(item => {
+            const currentLevel = gameState.marketItems[item.id] || 0;
+            const price = Math.floor(item.basePrice * Math.pow(1.15, currentLevel));
             
-            const earned = Math.floor((storedPPH / 3600) * offlineSeconds);
-            if (earned > 0) {
-                balance += earned;
-                document.getElementById('offline-earnings').innerText = earned.toLocaleString();
-                document.getElementById('offline-modal').style.display = 'flex';
+            document.getElementById(`level-${item.id}`).textContent = currentLevel;
+            document.getElementById(`price-${item.id}`).textContent = formatNumber(price);
+            
+            const itemEl = document.getElementById(`market-item-${item.id}`);
+            if (gameState.balance < price) {
+                itemEl.classList.add('disabled');
+            } else {
+                itemEl.classList.remove('disabled');
+            }
+        });
+    }
+
+    // --- Daily Reward Logic ---
+    function renderDailyRewardCalendar() {
+        calendarGrid.innerHTML = '';
+        for (let i = 0; i < 7; i++) {
+            const dayEl = document.createElement('div');
+            dayEl.className = 'calendar-day';
+            dayEl.id = `day-${i}`;
+            dayEl.innerHTML = `
+                <span class="day-number">روز ${i + 1}</span>
+                <span class="day-reward">+${formatNumber(DAILY_REWARDS[i])}</span>
+            `;
+            calendarGrid.appendChild(dayEl);
+        }
+        updateDailyRewardStatus();
+    }
+
+    function updateDailyRewardStatus() {
+        const today = new Date().getDay(); // 0 for Sunday, 6 for Saturday
+        const streak = gameState.dailyReward.streak;
+
+        for (let i = 0; i < 7; i++) {
+            const dayEl = document.getElementById(`day-${i}`);
+            dayEl.classList.remove('claimed', 'available');
+            if (i < streak) {
+                dayEl.classList.add('claimed');
             }
         }
-        
-        // Let's use simple local storage for PPH and last visit for now
-        pph = storedPPH; // Load PPH
-        lastTimestamp = now;
-        window.onbeforeunload = () => {
-            localStorage.setItem('civilCityLastVisit', new Date().getTime());
-            localStorage.setItem('civilCityPPH', pph);
-        };
-    };
 
-    // --- Engineering Tools Logic ---
+        if (gameState.dailyReward.lastClaimedDay !== today && streak < 7) {
+            claimDailyRewardBtn.disabled = false;
+            document.getElementById(`day-${streak}`).classList.add('available');
+        } else {
+            claimDailyRewardBtn.disabled = true;
+        }
+    }
+
+    claimDailyRewardBtn.addEventListener('click', () => {
+        const today = new Date().getDay();
+        if (gameState.dailyReward.lastClaimedDay !== today) {
+            const reward = DAILY_REWARDS[gameState.dailyReward.streak];
+            gameState.balance += reward;
+            gameState.dailyReward.lastClaimedDay = today;
+            gameState.dailyReward.streak++;
+            closeModal('daily-reward-modal');
+            updateUI();
+        }
+    });
+
+    dailyRewardBtn.addEventListener('click', () => {
+        updateDailyRewardStatus();
+        dailyRewardModal.classList.remove('hidden');
+    });
+
+    // --- Modal Logic ---
+    window.closeModal = (modalId) => {
+        document.getElementById(modalId).classList.add('hidden');
+    }
+
+    inviteBtn.addEventListener('click', () => inviteModal.classList.remove('hidden'));
+    
+    window.copyInviteLink = () => {
+        const linkInput = document.getElementById('invite-link');
+        linkInput.select();
+        linkInput.setSelectionRange(0, 99999);
+        document.execCommand('copy');
+        
+        const feedback = document.getElementById('copy-feedback');
+        feedback.textContent = 'کپی شد!';
+        setTimeout(() => { feedback.textContent = ''; }, 2000);
+    }
+
+    // --- Tools Logic ---
     window.calculateConcrete = () => {
         const l = parseFloat(document.getElementById('concrete-length').value) || 0;
         const w = parseFloat(document.getElementById('concrete-width').value) || 0;
         const h = parseFloat(document.getElementById('concrete-height').value) || 0;
-        document.getElementById('concrete-result').innerText = (l * w * h).toFixed(2);
-    };
+        document.getElementById('concrete-result').textContent = (l * w * h).toFixed(2);
+    }
+    
     window.calculateRebar = () => {
         const d = parseFloat(document.getElementById('rebar-diameter').value) || 0;
         const l = parseFloat(document.getElementById('rebar-length').value) || 0;
-        const weight = (d * d * l * 0.00617).toFixed(2);
-        document.getElementById('rebar-result').innerText = weight;
-    };
+        const weight = (d * d * l * 0.00617).toFixed(2); // Standard formula
+        document.getElementById('rebar-result').textContent = weight;
+    }
+
     window.calculateBricks = () => {
-        const area = parseFloat(document.getElementById('brick-area').value) || 0;
-        document.getElementById('brick-result').innerText = Math.ceil(area * 70);
-    };
+        const area = parseFloat(document.getElementById('wall-area').value) || 0;
+        document.getElementById('bricks-result').textContent = Math.ceil(area * 70); // Approximation
+    }
+    
     window.calculateSlope = () => {
         const rise = parseFloat(document.getElementById('slope-rise').value) || 0;
         const run = parseFloat(document.getElementById('slope-run').value) || 0;
-        if (run === 0) {
-            document.getElementById('slope-result').innerText = 'N/A';
+        if(run === 0) {
+            document.getElementById('slope-result').textContent = "نامحدود";
             return;
         }
-        document.getElementById('slope-result').innerText = ((rise / run) * 100).toFixed(1);
-    };
+        document.getElementById('slope-result').textContent = ((rise / run) * 100).toFixed(1);
+    }
+    
+    // NEW: Asphalt Calculator
+    window.calculateAsphalt = () => {
+        const length = parseFloat(document.getElementById('asphalt-length').value) || 0;
+        const width = parseFloat(document.getElementById('asphalt-width').value) || 0;
+        const thicknessCm = parseFloat(document.getElementById('asphalt-thickness').value) || 0;
+        const density = 2.4; // Average density of asphalt in ton/m^3
+        const volumeM3 = length * width * (thicknessCm / 100);
+        const weightTon = volumeM3 * density;
+        document.getElementById('asphalt-result').textContent = weightTon.toFixed(2);
+    }
 
-    // --- Daily Reward System ---
-    const dailyRewards = [500, 1000, 2500, 5000, 15000, 50000, 100000];
-    let lastDailyTime = 0; // Simplified for this session, should be stored
-    let currentDayStreak = 0; // Simplified for this session, should be stored
+    // NEW: Pipe Flow Rate Calculator
+    window.calculateFlowRate = () => {
+        const diameterCm = parseFloat(document.getElementById('pipe-diameter').value) || 0;
+        const velocity = parseFloat(document.getElementById('pipe-velocity').value) || 0;
+        const radiusM = (diameterCm / 2) / 100;
+        const areaM2 = Math.PI * Math.pow(radiusM, 2);
+        const flowRateM3s = areaM2 * velocity;
+        const flowRateLps = flowRateM3s * 1000; // Convert to Liters per second
+        document.getElementById('flowrate-result').textContent = flowRateLps.toFixed(2);
+    }
 
-    window.openDailyReward = function() {
-        const modal = document.getElementById('daily-modal');
-        const grid = document.getElementById('daily-grid');
-        const claimBtn = document.getElementById('claim-daily-btn');
-        
-        modal.style.display = 'flex';
-        grid.innerHTML = '';
+    // --- Airdrop Logic ---
+    function updateAirdropCountdown() {
+        const interval = setInterval(() => {
+            const now = new Date().getTime();
+            const distance = AIRDROP_END_DATE - now;
 
-        const now = new Date().getTime();
-        const canClaim = (lastDailyTime === 0) || (now - lastDailyTime > (24 * 60 * 60 * 1000));
-        
-        dailyRewards.forEach((amount, index) => {
-            const dayCard = document.createElement('div');
-            dayCard.className = 'day-card';
-            
-            if (index < currentDayStreak) {
-                dayCard.classList.add('claimed');
-                dayCard.innerHTML = `<i class="fas fa-check"></i><div class="day-reward">روز ${index+1}</div>`;
-            } else if (index === currentDayStreak && canClaim) {
-                dayCard.classList.add('active');
-                dayCard.innerHTML = `<i class="fas fa-coins"></i><div class="day-reward">${amount.toLocaleString()}</div>`;
-            } else {
-                 dayCard.innerHTML = `<i class="fas fa-lock"></i><div class="day-reward">${(index === currentDayStreak) ? amount.toLocaleString() : `روز ${index+1}`}</div>`;
+            if (distance < 0) {
+                clearInterval(interval);
+                countdownEl.textContent = "ایردراپ انجام شد!";
+                return;
             }
-            grid.appendChild(dayCard);
-        });
 
-        if (canClaim) {
-            claimBtn.disabled = false;
-            claimBtn.innerText = "دریافت جایزه";
-            claimBtn.style.background = "#f1c40f";
-        } else {
-            claimBtn.disabled = true;
-            claimBtn.innerText = "فردا برگردید";
-            claimBtn.style.background = "#555";
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            countdownEl.textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+        }, 1000);
+    }
+    
+    function updateAirdropView() {
+        // Simple formula: 1 in-game coin = 0.05 CVC token (example)
+        const estimatedAirdrop = gameState.balance * 0.05;
+        estimatedAirdropEl.textContent = formatNumber(Math.floor(estimatedAirdrop));
+    }
+
+    // --- Data Persistence ---
+    function saveGameState() {
+        try {
+            localStorage.setItem('civilCityGameState', JSON.stringify(gameState));
+        } catch (e) {
+            console.error("Could not save game state:", e);
         }
-    };
+    }
 
-    window.claimDailyReward = function() {
-        const now = new Date().getTime();
-        const canClaim = (lastDailyTime === 0) || (now - lastDailyTime > (24 * 60 * 60 * 1000));
-        
-        if (canClaim) {
-            const rewardAmount = dailyRewards[currentDayStreak];
-            balance += rewardAmount;
-            lastDailyTime = now;
-            currentDayStreak = (currentDayStreak + 1); // We won't reset for now to make it more rewarding
-            if (currentDayStreak >= dailyRewards.length) currentDayStreak = dailyRewards.length - 1; // Stay on last day
-            
-            updateUI();
-            hapticFeedback();
-            closeModal('daily-modal');
-            
-            alert(`تبریک! شما ${rewardAmount.toLocaleString()} سکه دریافت کردید.`);
+    function loadGameState() {
+        const savedState = localStorage.getItem('civilCityGameState');
+        if (savedState) {
+            const loadedState = JSON.parse(savedState);
+            // We carefully merge to avoid issues with new/deleted properties in updates
+            Object.assign(gameState, loadedState);
         }
-    };
+        // Always reset last online time on load
+        gameState.lastOnline = new Date().getTime();
+    }
+    
+    // --- Utility Functions ---
+    function formatNumber(num) {
+        if (num < 1000) return num;
+        if (num < 1000000) return (num / 1000).toFixed(1) + 'K';
+        if (num < 1000000000) return (num / 1000000).toFixed(2) + 'M';
+        if (num < 1000000000000) return (num / 1000000000).toFixed(3) + 'B';
+        return (num / 1000000000000).toFixed(4) + 'T';
+    }
 
-    window.openFriendsModal = function() {
-        document.getElementById('friends-modal').style.display = 'flex';
-    };
-
-    // --- Initial Load ---
-    setTimeout(() => {
-        loadingScreen.style.display = 'none';
-        mainContent.style.display = 'flex';
-        // calculateOfflineEarnings(); // Disabled for now to prevent confusion
-        populateMarket();
-        updateUI();
-    }, 1500);
+    // Start the game
+    init();
 });
