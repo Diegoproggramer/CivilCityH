@@ -1,152 +1,163 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // Initialize Telegram Web App
-    const tg = window.Telegram.WebApp;
-    tg.expand();
+// تنظیمات اولیه
+let balance = 0;
+let energy = 1000;
+let maxEnergy = 1000;
+let energyRechargeRate = 1; // مقدار انرژی که هر ثانیه پر می شود
 
-    // ===== NEW: Splash Screen Logic =====
-    const splashScreen = document.getElementById('splash-screen');
-    const appContainer = document.getElementById('app-container');
-    const bottomNav = document.querySelector('.bottom-nav');
+// دریافت المنت‌ها از HTML
+const balanceDisplay = document.getElementById('balance');
+const energyDisplay = document.getElementById('energy');
+const energyMaxDisplay = document.getElementById('max-energy');
+const energyFill = document.getElementById('energy-fill');
+const splashScreen = document.getElementById('splash-screen');
+const coinBtn = document.getElementById('coin-btn');
+const toast = document.getElementById('toast');
 
+// تابع شروع برنامه
+window.addEventListener('DOMContentLoaded', () => {
+    // 1. بازیابی اطلاعات ذخیره شده کاربر
+    const savedBalance = localStorage.getItem('civilBalance');
+    const savedEnergy = localStorage.getItem('civilEnergy');
+    const lastLogin = localStorage.getItem('lastLoginTime');
+
+    if (savedBalance) balance = parseInt(savedBalance);
+    if (savedEnergy) energy = parseInt(savedEnergy);
+
+    // محاسبه انرژی پر شده در زمان غیبت کاربر
+    if (lastLogin) {
+        const now = Date.now();
+        const diffSeconds = Math.floor((now - parseInt(lastLogin)) / 1000);
+        const gainedEnergy = diffSeconds * energyRechargeRate;
+        energy = Math.min(energy + gainedEnergy, maxEnergy);
+    }
+
+    updateUI();
+
+    // 2. مخفی کردن صفحه لودینگ بعد از 2.5 ثانیه
     setTimeout(() => {
         splashScreen.style.opacity = '0';
-        appContainer.style.visibility = 'visible';
-        bottomNav.style.visibility = 'visible';
-        // Remove splash screen from DOM after transition to improve performance
-        setTimeout(() => splashScreen.remove(), 500); 
-    }, 3000); // 3 seconds delay
+        setTimeout(() => {
+            splashScreen.style.display = 'none';
+        }, 500);
+    }, 2500);
 
-
-    // Game state object
-    let state = {
-        score: 0,
-        energy: 1000,
-        maxEnergy: 1000,
-        rechargeRate: 1,
-        multitapLevel: 1,
-        energyLimitLevel: 1,
-        rechargeLevel: 1,
-        lastLoginDate: null // NEW: For daily reward
-    };
-
-    // DOM Elements (same as before)
-    const scoreCounter = document.getElementById('score-counter');
-    // ... all other DOM elements ...
-
-    // ===== NEW: Toast Notification Function =====
-    function showToast(message, type = 'success') {
-        const container = document.getElementById('toast-container');
-        const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
-        toast.textContent = message;
-        container.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
-    }
-    
-    // ===== NEW: Daily Reward Logic =====
-    const dailyRewardModal = document.getElementById('daily-reward-modal');
-    const claimDailyRewardBtn = document.getElementById('claim-daily-reward-btn');
-
-    function checkDailyReward() {
-        const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
-        if (state.lastLoginDate !== today) {
-            dailyRewardModal.style.display = 'flex';
-            state.lastLoginDate = today;
-            state.score += 5000;
-            saveState();
-            updateUI();
-        }
-    }
-
-    claimDailyRewardBtn.addEventListener('click', () => {
-        dailyRewardModal.style.display = 'none';
-        showToast('+5000 CVC پاداش روزانه دریافت شد!', 'success');
-        // Vibrate on claim
-        if (tg.HapticFeedback) {
-            tg.HapticFeedback.notificationOccurred('success');
-        }
-    });
-
-
-    function saveState() { /* ... same as before ... */ }
-
-    function loadState() {
-        const savedState = localStorage.getItem('civilCoinState');
-        if (savedState) {
-            state = JSON.parse(savedState);
-        }
-        // ... set username ...
-        
-        // NEW: Check for daily reward after loading state
-        checkDailyReward();
-    }
-    
-    function updateUI() { /* ... same as before ... */ }
-
-    coinTapper.addEventListener('click', (e) => {
-        // ... logic for score and energy ...
-        // ... logic for floating number ...
-        
-        // ===== NEW: Haptic Feedback on Tap =====
-        if (tg.HapticFeedback) {
-            tg.HapticFeedback.impactOccurred('light'); // 'light', 'medium', 'heavy'
-        }
-        
-        updateUI();
-    });
-
-    // ... Energy regeneration loop ...
-    // ... Page Navigation logic ...
-    // ... TradingView and Calculator logic ...
-
-    // ===== UPDATED: Boosts Logic with Toasts and Haptics =====
-
-    document.getElementById('boost-multitap').addEventListener('click', () => {
-        const cost = getBoostCost('multitap');
-        if (state.score >= cost) {
-            state.score -= cost;
-            state.multitapLevel++;
-            updateUI();
-            showToast('سطح پُتک فولادی افزایش یافت!', 'success');
-            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-        } else {
-            showToast('سکه کافی نیست!', 'error');
-            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
-        }
-    });
-
-    document.getElementById('boost-energy-limit').addEventListener('click', () => {
-        const cost = getBoostCost('energyLimit');
-        if (state.score >= cost) {
-            state.score -= cost;
-            state.energyLimitLevel++;
-            state.maxEnergy += 500;
-            updateUI();
-            showToast('ظرفیت نیروگاه افزایش یافت!', 'success');
-            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-        } else {
-            showToast('سکه کافی نیست!', 'error');
-            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
-        }
-    });
-    
-    document.getElementById('boost-recharge-speed').addEventListener('click', () => {
-        const cost = getBoostCost('recharge');
-        if (state.score >= cost) {
-            state.score -= cost;
-            state.rechargeLevel++;
-            state.rechargeRate++;
-            updateUI();
-            showToast('سرعت شارژر توربو افزایش یافت!', 'success');
-            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-        } else {
-            showToast('سکه کافی نیست!', 'error');
-            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
-        }
-    });
-
-
-    // === INITIALIZATION ===
-    loadState();
-    updateUI();
+    // 3. شروع بازسازی انرژی
+    setInterval(rechargeEnergy, 1000);
 });
+
+// تابع کلیک روی سکه
+coinBtn.addEventListener('click', (e) => {
+    if (energy > 0) {
+        // افزایش سکه
+        balance += 1;
+        energy -= 1;
+        
+        // ویبره موبایل (Haptic Feedback)
+        if (navigator.vibrate) navigator.vibrate(10);
+
+        // نمایش عدد شناور (+1)
+        showFloatingText(e.clientX, e.clientY);
+
+        // انیمیشن کج شدن سکه
+        const rect = coinBtn.getBoundingClientRect();
+        const x = e.clientX - rect.left - rect.width / 2;
+        const y = e.clientY - rect.top - rect.height / 2;
+        coinBtn.style.transform = `perspective(1000px) rotateX(${-y / 10}deg) rotateY(${x / 10}deg) scale(0.95)`;
+        setTimeout(() => {
+            coinBtn.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
+        }, 100);
+
+        updateUI();
+        saveData();
+    } else {
+        showToast("انرژی کافی نیست!");
+    }
+});
+
+// تابع بازسازی انرژی
+function rechargeEnergy() {
+    if (energy < maxEnergy) {
+        energy += energyRechargeRate;
+        if (energy > maxEnergy) energy = maxEnergy;
+        updateUI();
+        saveData();
+    }
+}
+
+// نمایش اعداد شناور هنگام کلیک
+function showFloatingText(x, y) {
+    const floatEl = document.createElement('div');
+    floatEl.innerText = '+1';
+    floatEl.className = 'floating-number';
+    floatEl.style.left = `${x}px`;
+    floatEl.style.top = `${y}px`;
+    document.body.appendChild(floatEl);
+
+    setTimeout(() => {
+        floatEl.remove();
+    }, 1000);
+}
+
+// به‌روزرسانی ظاهر برنامه
+function updateUI() {
+    balanceDisplay.innerText = balance.toLocaleString();
+    energyDisplay.innerText = Math.floor(energy);
+    energyMaxDisplay.innerText = maxEnergy;
+    
+    // آپدیت نوار انرژی
+    const percentage = (energy / maxEnergy) * 100;
+    energyFill.style.width = `${percentage}%`;
+}
+
+// ذخیره در حافظه مرورگر
+function saveData() {
+    localStorage.setItem('civilBalance', balance);
+    localStorage.setItem('civilEnergy', energy);
+    localStorage.setItem('lastLoginTime', Date.now());
+}
+
+// مدیریت تب‌ها (Navigation)
+window.switchTab = function(tabName) {
+    // مخفی کردن همه ویوها
+    document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+
+    // نمایش ویو انتخاب شده
+    if (tabName === 'main') {
+        document.getElementById('main-view').classList.add('active');
+        document.querySelectorAll('.nav-item')[0].classList.add('active');
+    } else if (tabName === 'boost') {
+        document.getElementById('boost-view').classList.add('active');
+        document.querySelectorAll('.nav-item')[1].classList.add('active');
+    } else if (tabName === 'friends') {
+        document.getElementById('friends-view').classList.add('active');
+        document.querySelectorAll('.nav-item')[2].classList.add('active');
+    }
+}
+
+// نمایش پیام کوتاه (Toast)
+function showToast(message) {
+    toast.innerText = message;
+    toast.style.display = 'block';
+    setTimeout(() => {
+        toast.style.display = 'none';
+    }, 2000);
+}
+
+// شبیه‌سازی خرید بوست (فعلا نمایشی)
+window.buyBoost = function(type) {
+    if (type === 'multitap' && balance >= 500) {
+        balance -= 500;
+        showToast("بوست خریداری شد!");
+        updateUI();
+    } else if (type === 'energy' && balance >= 1000) {
+        balance -= 1000;
+        maxEnergy += 500;
+        energy = maxEnergy;
+        showToast("مخزن انرژی ارتقا یافت!");
+        updateUI();
+    } else {
+        showToast("سکه کافی ندارید!");
+    }
+}
+
